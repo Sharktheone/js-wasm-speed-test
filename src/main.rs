@@ -1,3 +1,8 @@
+use std::env;
+use std::path::Path;
+
 fn main() {
-    println!("Hello, world!");
+    let path = env::args().next().unwrap();
+
+    let path = Path::new(&path);
 }
