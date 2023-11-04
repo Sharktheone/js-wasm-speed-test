@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
-name = "js-wasm-speed-test"
+name = "lib"
 version = "0.1.0"
+
+[[package]]
+name = "test"
+version = "0.1.0"
+dependencies = [
+ "lib",
+]
