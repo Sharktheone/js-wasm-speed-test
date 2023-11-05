@@ -1,4 +1,7 @@
-
+mod wasmer;
+mod wasmtime;
+mod wasmedge;
+mod wasmi;
 
 enum Engine {
     Wasmer, //https://github.com/wasmerio/wasmer
