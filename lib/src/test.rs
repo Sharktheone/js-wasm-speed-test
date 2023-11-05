@@ -45,8 +45,8 @@ fn test_dir(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
                 results.push(res);
             } else {
                 match res.err().unwrap() {
-                    TestError::InvalidFileType => continue,
                     TestError::Other(err) => return Err(err),
+                    _ => continue,
                 }
             }
         }
