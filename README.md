@@ -9,16 +9,18 @@ runtime to use for the engine.
     - [V8](https://v8.dev/)
     - [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
     - [JavaScriptCore](https://developer.apple.com/documentation/javascriptcore)
+    - [Deno](https://github.com/denoland/deno)
     - [ChakraCore](https://developer.apple.com/documentation/javascriptcore)
-    - [Duktape](https://github.com/svaarala/duktap)
+    - [Duktape](https://github.com/svaarala/duktape)
     - [Hermes](https://github.com/facebook/hermes)
     - [JerryScript](https://github.com/jerryscript-project/jerryscript)
-    - [(MuJS)](https://github.com/ccxvii/mujs) NOTE: seems like a very small project
+    - ([MuJS](https://github.com/ccxvii/mujs)) NOTE: seems like a very small project
     - [Espruino](https://github.com/espruino/Espruino)
 - WASM
     - [V8](https://v8.dev/)
     - [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
     - [JavaScriptCore](https://developer.apple.com/documentation/javascriptcore)
+    - [Deno](https://github.com/denoland/deno)?
     - [Wasmer](https://github.com/wasmerio/wasmer)
     - [Wasmtime](https://github.com/bytecodealliance/wasmtime)
     - [Wamr](https://github.com/bytecodealliance/wasm-micro-runtime)

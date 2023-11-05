@@ -9,4 +9,5 @@ enum Engine {
     SpiderMonkey, //https://spidermonkey.dev/
     V8, //https://v8.dev/
     JavaScriptCore, //https://developer.apple.com/documentation/javascriptcore
+    Deno, //https://github.com/denoland/deno does deno really support wasm?
 }

@@ -4,6 +4,7 @@ enum Engine {
     V8, //https://v8.dev/
     SpiderMonkey, //https://spidermonkey.dev/
     JavaScriptCore, //https://developer.apple.com/documentation/javascriptcore
+    Deno, //https://github.com/denoland/deno
     Chakra, //https://github.com/chakra-core/ChakraCore
     Duktape, //https://github.com/svaarala/duktape
     Hermes, //https://github.com/facebook/hermes
