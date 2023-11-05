@@ -16,6 +16,7 @@ runtime to use for the engine.
     - [JerryScript](https://github.com/jerryscript-project/jerryscript)
     - ([MuJS](https://github.com/ccxvii/mujs)) NOTE: seems like a very small project
     - [Espruino](https://github.com/espruino/Espruino)
+    - [Bun](https://github.com/oven-sh/bun)
 - WASM
     - [V8](https://v8.dev/)
     - [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
@@ -26,3 +27,15 @@ runtime to use for the engine.
     - [Wamr](https://github.com/bytecodealliance/wasm-micro-runtime)
     - [WasmEdge](https://github.com/WasmEdge/WasmEdge)
     - [Wasmi](https://github.com/paritytech/wasmi)
+
+> **NOTE**
+> - Due to popularity MuJS should probably not be used for the GoSuB Engine
+> - Bun has no API
+> - No crates found for Hermes, JerryScript, Espruino
+> - Duktape has no popular crate for rust
+> - Wasmr has only a crate which is last updated 3 years ago, but it has go bindings => not preferred
+
+## Results
+
+Not yet tested
+

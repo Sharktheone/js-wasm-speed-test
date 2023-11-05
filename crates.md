@@ -1,0 +1,19 @@
+- Both:
+    - V8: [rusty_v8](https://github.com/denoland/rusty_v8)
+    - SpiderMonkey: [mozjs](https://github.com/servo/mozjs)
+    - JavaScriptCore: [javascriptcore-rs](https://github.com/tauri-apps/javascriptcore-rs)
+    - Deno: [deno_core](https://github.com/denoland/deno_core) Really both?
+- JS
+    - ChakraCore: [chakracore](https://github.com/darfink/chakracore-rs) NOTE: not updated for 2 years
+    - Duktape: [kg-js](https://github.com/kodegenix/kg-js)
+    - Hermes: ??? found nothing
+    - JerryScript: ??? found nothing
+    - MuJS: ([mujs](https://github.com/hean01/mujs-rs)) NOTE: not updated for 6 years
+    - Espruino: ??? found nothing
+    - Bun: ??? no API
+- WASM
+    - Wasmer: [wasmer](https://github.com/wasmerio/wasmer)
+    - Wasmtime: [wasmtime](https://github.com/bytecodealliance/wasmtime)
+    - Wamr: [wamr-sys](https://github.com/rahul-thakoor/wamr-sys) NOTE: not updated for 3 years NOTE: There are go bindings <= use this maybe
+    - WasmEdge: [wasmedge-sdk](https://github.com/WasmEdge/wasmedge-rust-sdk)
+    - Wasmi: [wasmi](https://github.com/paritytech/wasmi)
