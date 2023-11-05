@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::path::Path;
+use crate::errors::TestError;
 use crate::TestResult;
 use crate::validator::Validator;
 
@@ -24,6 +26,5 @@ pub enum JSEngine {
 
 
 pub trait JSRunner {
-    fn init() -> Result<(), Box<dyn Error>>;
-    fn run_js_file(&self, path: &str, validator: &Validator) -> Result<TestResult, Box<dyn Error>>;
+    fn run_js_file(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError>;
 }

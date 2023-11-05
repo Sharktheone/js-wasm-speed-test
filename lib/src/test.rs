@@ -23,7 +23,7 @@ pub struct TestResult {
 
 pub fn test(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
     if path.is_dir() {
-        return Ok(test_dir(path)?);
+        test_dir(path)
     } else {
         let res = test_file(path)?;
         Ok(vec![res])

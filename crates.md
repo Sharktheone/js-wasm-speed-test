@@ -1,5 +1,5 @@
 - Both:
-    - V8: [rusty_v8](https://github.com/denoland/rusty_v8)
+    - V8: [v8](https://github.com/denoland/rusty_v8)
     - SpiderMonkey: [mozjs](https://github.com/servo/mozjs)
     - JavaScriptCore: [javascriptcore-rs](https://github.com/tauri-apps/javascriptcore-rs)
     - Deno: [deno_core](https://github.com/denoland/deno_core) Really both?
