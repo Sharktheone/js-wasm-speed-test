@@ -2,8 +2,8 @@ pub use test::*;
 
 mod test;
 mod errors;
-mod js;
-mod wasm;
-mod validator;
+pub mod js;
+pub mod wasm;
+pub mod validator;
 
 

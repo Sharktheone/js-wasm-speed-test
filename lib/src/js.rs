@@ -11,6 +11,13 @@ mod deno;
 mod chakra;
 mod duktape;
 
+pub use v8::*;
+pub use spidermonkey::*;
+pub use javascriptcore::*;
+pub use deno::*;
+pub use chakra::*;
+pub use duktape::*;
+
 pub enum JSEngine {
     V8, //https://v8.dev/
     SpiderMonkey, //https://spidermonkey.dev/

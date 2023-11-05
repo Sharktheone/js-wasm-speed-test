@@ -26,7 +26,7 @@ impl<'a> V8<'a> {
 
         let mut v8 = MaybeUninit::<V8>::uninit();
 
-        //hopefully this shit won't explode...
+        //hopefully this shit won't explode... it does.. shit TODO
         let v8 = unsafe {
             let ptr = v8.as_mut_ptr();
 
