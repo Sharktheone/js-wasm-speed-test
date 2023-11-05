@@ -1,7 +1,14 @@
 use std::error::Error;
 use std::path::Path;
+
 use crate::errors::TestError;
-use std::io::Error as IoError;
+use crate::js::JSEngine;
+use crate::wasm::WasmEngine;
+
+pub enum Engine {
+    Wasm(WasmEngine),
+    JS(JSEngine),
+}
 
 pub struct TestResult {
     path: Box<Path>,
@@ -10,12 +17,13 @@ pub struct TestResult {
     cpu: Vec<u64>,
     mem: Vec<u64>,
     success: bool,
+    engine: Engine,
 }
 
 
 pub fn test(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
     if path.is_dir() {
-        return Ok(test_dir(path)?)
+        return Ok(test_dir(path)?);
     } else {
         let res = test_file(path)?;
         Ok(vec![res])
@@ -45,10 +53,8 @@ fn test_dir(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
     }
 
     Ok(results)
-
 }
 
 fn test_file(path: &Path) -> Result<TestResult, TestError> {
-
     todo!()
 }
