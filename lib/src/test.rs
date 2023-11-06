@@ -46,6 +46,7 @@ fn test_dir(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
             } else {
                 match res.err().unwrap() {
                     TestError::Other(err) => return Err(err),
+                    TestError::AlreadyInitialized => return Err(Box::new(TestError::AlreadyInitialized)),
                     _ => continue,
                 }
             }

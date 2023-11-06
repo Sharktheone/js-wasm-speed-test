@@ -1,3 +1,6 @@
+#![allow(dead_code)] // shut up
+
+
 pub use test::*;
 
 mod test;

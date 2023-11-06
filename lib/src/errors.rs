@@ -6,6 +6,7 @@ pub enum TestError {
     IsDir,
     IsFile,
     InvalidFileType,
+    AlreadyInitialized,
     Other(Box<dyn Error>),
 }
 
@@ -15,7 +16,9 @@ impl Display for TestError {
             TestError::InvalidFileType => write!(f, "Invalid file type"),
             TestError::IsDir => write!(f, "Path is a directory"),
             TestError::IsFile => write!(f, "Path is a file"),
+            TestError::AlreadyInitialized => write!(f, "V8 is already initialized"),
             TestError::Other(err) => write!(f, "{}", err),
+            _ => write!(f, "Unknown error"),
         }
     }
 }
