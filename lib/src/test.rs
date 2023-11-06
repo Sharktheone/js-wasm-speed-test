@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::path::Path;
 
 use crate::errors::TestError;
@@ -21,7 +20,7 @@ pub struct TestResult {
 }
 
 
-pub fn test(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
+pub fn test(path: &Path) -> Result<Vec<TestResult>, TestError> {
     if path.is_dir() {
         test_dir(path)
     } else {
@@ -30,7 +29,7 @@ pub fn test(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
     }
 }
 
-fn test_dir(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
+fn test_dir(path: &Path) -> Result<Vec<TestResult>, TestError> {
     let mut results = vec![];
 
     for entry in path.read_dir()? {
@@ -45,8 +44,8 @@ fn test_dir(path: &Path) -> Result<Vec<TestResult>, Box<dyn Error>> {
                 results.push(res);
             } else {
                 match res.err().unwrap() {
-                    TestError::Other(err) => return Err(err),
-                    TestError::AlreadyInitialized => return Err(Box::new(TestError::AlreadyInitialized)),
+                    TestError::Other(err) => return Err(TestError::Other(err)),
+                    TestError::AlreadyInitialized => return Err(TestError::AlreadyInitialized),
                     _ => continue,
                 }
             }

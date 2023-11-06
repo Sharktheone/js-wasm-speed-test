@@ -1,7 +1,7 @@
-use std::fs;
-use std::io::Error;
+use std::{fs, thread};
 use std::path::Path;
 
+use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
 use crate::errors::TestError;
@@ -9,24 +9,14 @@ use crate::js::JSRunner;
 use crate::TestResult;
 use crate::validator::Validator;
 
-// pub struct V8<'a> {
-//     isolate: Pin<Box<OwnedIsolate>>,
-//     handle_scope: Pin<Box<HandleScope<'a, ()>>>,
-//     context: Pin<Box<Local<'a, Context>>>,
-//     // scope: Pin<Box<ContextScope<'a, HandleScope<'a>>>>,
-//     _pin: std::marker::PhantomPinned,
-// }
-
 pub struct V8;
 
 static mut INITIALIZED: bool = false;
 
 
-
 impl V8 {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Result<V8, TestError> {
-
         if unsafe { INITIALIZED } {
             return Err(TestError::AlreadyInitialized);
         }
@@ -40,21 +30,8 @@ impl V8 {
         }
 
 
-        //     Box::pin(V8 {
-        //         isolate,
-        //         handle_scope,
-        //         context,
-        //         // scope,
-        //         _pin: std::marker::PhantomPinned,
-        //     })
-
         Ok(V8)
     }
-
-    // #[inline]
-    // fn s(&mut self) -> &mut ContextScope<'a, HandleScope<'a>> {
-    //     // self.scope.as_mut().get_mut()
-    // }
 }
 
 impl Drop for V8 {
@@ -79,19 +56,52 @@ impl<'a> JSRunner for V8 {
 
         let file = fs::read_to_string(path)?;
 
-        let isolate = &mut Isolate::new(Default::default());
-        let hs = &mut HandleScope::new(isolate);
-        let c = Context::new(hs);
-        let s = &mut ContextScope::new(hs, c); //TODO: Would be nice if we could embed these values into the struct
+
+        procspawn::init();
 
 
-        let code = v8::String::new(s, &file).unwrap();
+        let handle = procspawn::spawn(file, |file| {
+            let isolate = &mut Isolate::new(Default::default());
+            let hs = &mut HandleScope::new(isolate);
+            let c = Context::new(hs);
+            let s = &mut ContextScope::new(hs, c);
 
-        let script = v8::Script::compile(s, code, None).unwrap();
+            let code = v8::String::new(s, &file).unwrap();
+            let script = v8::Script::compile(s, code, None).unwrap();
+            script.run(s).unwrap();
 
-        let result = script.run(s).unwrap().to_string(s).unwrap();
+            for _ in 0..100000000 {
+                script.run(s).unwrap();
+            }
 
-        println!("{}", result.to_rust_string_lossy(s));
+            println!("child: {}", std::process::id());
+        });
+
+        let pid = handle.pid().unwrap();
+
+        let mut sys = System::new_all();
+
+
+        let handle = thread::spawn(move || {
+            handle.join().unwrap();
+            println!("child exited");
+        });
+
+        loop {
+            sys.refresh_all();
+            if let Some(sys) = sys.process(Pid::from_u32(pid)) {
+                println!("=====================");
+                println!("cpu: {}", sys.cpu_usage());
+                println!("memory: {}", sys.memory());
+                println!("=====================");
+            }
+
+            if handle.is_finished() {
+                break;
+            }
+        }
+
+        println!("parent: {}", std::process::id());
 
 
         Err(TestError::IsFile)

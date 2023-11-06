@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::io::Error as IoError;
 
 #[derive(Debug)]
 pub enum TestError {
@@ -7,6 +8,7 @@ pub enum TestError {
     IsFile,
     InvalidFileType,
     AlreadyInitialized,
+    String(String),
     Other(Box<dyn Error>),
 }
 
@@ -18,21 +20,19 @@ impl Display for TestError {
             TestError::IsFile => write!(f, "Path is a file"),
             TestError::AlreadyInitialized => write!(f, "V8 is already initialized"),
             TestError::Other(err) => write!(f, "{}", err),
+            TestError::String(err) => write!(f, "{}", err),
             _ => write!(f, "Unknown error"),
         }
     }
 }
 
-impl From<Box<dyn Error + 'static>> for TestError {
-    fn from(err: Box<dyn Error>) -> Self {
-        TestError::Other(err)
-    }
-}
 
-impl From<std::io::Error> for TestError {
-    fn from(err: std::io::Error) -> Self {
+
+impl From<IoError> for TestError {
+    fn from(err: IoError) -> Self {
         TestError::Other(Box::new(err))
     }
 }
+
 
 impl Error for TestError {}
