@@ -17,6 +17,8 @@ runtime to use for the engine.
     - ([MuJS](https://github.com/ccxvii/mujs)) NOTE: seems like a very small project
     - [Espruino](https://github.com/espruino/Espruino)
     - [Bun](https://github.com/oven-sh/bun)
+    - [Worked](https://github.com/cloudflare/workerd)
+    - [Boa](https://github.com/boa-dev/boa)
 - WASM
     - [V8](https://v8.dev/)
     - [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)

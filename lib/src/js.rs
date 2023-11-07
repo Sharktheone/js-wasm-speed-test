@@ -1,23 +1,17 @@
-use std::error::Error;
 use std::path::Path;
 use crate::errors::TestError;
 use crate::TestResult;
 use crate::validator::Validator;
 
-mod v8;
-mod spidermonkey;
-mod javascriptcore;
-mod deno;
-mod chakra;
-mod duktape;
+pub(crate) mod v8;
+pub(crate) mod spidermonkey;
+pub(crate) mod javascriptcore;
+pub(crate) mod deno;
+pub(crate) mod chakra;
+pub(crate) mod duktape;
 
-pub use v8::*;
-pub use spidermonkey::*;
-pub use javascriptcore::*;
-pub use deno::*;
-pub use chakra::*;
-pub use duktape::*;
 
+#[derive(Debug)]
 pub enum JSEngine {
     V8, //https://v8.dev/
     SpiderMonkey, //https://spidermonkey.dev/

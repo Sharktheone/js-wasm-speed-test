@@ -11,6 +11,7 @@ mod javascriptcore;
 mod spidermonkey;
 mod v8;
 
+#[derive(Debug)]
 pub enum WasmEngine {
     Wasmer, //https://github.com/wasmerio/wasmer
     Wasmtime, //https://github.com/bytecodealliance/wasmtime

@@ -4,19 +4,42 @@ use crate::errors::TestError;
 use crate::js::JSEngine;
 use crate::wasm::WasmEngine;
 
+#[derive(Debug)]
 pub enum Engine {
     Wasm(WasmEngine),
     JS(JSEngine),
 }
 
+#[derive(Debug)]
 pub struct TestResult {
-    path: Box<Path>,
-    time: u64,
-    cpu_time: u64,
-    cpu: Vec<u64>,
-    mem: Vec<u64>,
-    success: bool,
-    engine: Engine,
+    pub path: Box<Path>,
+    pub time: u64,
+    pub cpu_time: u64,
+    pub resources: Vec<ResourceUsage>,
+    pub success: bool,
+    pub engine: Engine,
+}
+
+#[derive(Debug)]
+pub struct ResourceUsage {
+    pub cpu: f32,
+    pub mem: u64,
+    pub elapsed: u128,
+}
+
+
+impl TestResult {
+    pub fn new(path: &Path, engine: Engine) -> Self {
+        TestResult {
+            path: Box::from(path),
+            time: 0,
+            cpu_time: 0,
+            resources: vec![],
+            success: false,
+            engine,
+        }
+    }
+
 }
 
 
