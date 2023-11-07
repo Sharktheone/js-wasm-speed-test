@@ -1,12 +1,14 @@
 use std::{fs, thread};
 use std::path::Path;
+use std::time::Instant;
+
 
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
 use crate::errors::TestError;
-use crate::js::JSRunner;
-use crate::TestResult;
+use crate::js::{JSEngine, JSRunner};
+use crate::{Engine, ResourceUsage, TestResult};
 use crate::validator::Validator;
 
 pub struct V8;
@@ -44,7 +46,7 @@ impl Drop for V8 {
     }
 }
 
-impl<'a> JSRunner for V8 {
+impl JSRunner for V8 {
     fn run_js_file(&mut self, path: &Path, _validator: &Validator) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
@@ -56,11 +58,13 @@ impl<'a> JSRunner for V8 {
 
         let file = fs::read_to_string(path)?;
 
+        let mut sys = System::new_all();
+        let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
+
 
         procspawn::init();
 
-
-        let handle = procspawn::spawn(file, |file| {
+        let h = procspawn::spawn(file, |file| {
             let isolate = &mut Isolate::new(Default::default());
             let hs = &mut HandleScope::new(isolate);
             let c = Context::new(hs);
@@ -70,40 +74,46 @@ impl<'a> JSRunner for V8 {
             let script = v8::Script::compile(s, code, None).unwrap();
             script.run(s).unwrap();
 
-            for _ in 0..100000000 {
+            for _ in 0..1000000 {
                 script.run(s).unwrap();
             }
 
             println!("child: {}", std::process::id());
         });
 
-        let pid = handle.pid().unwrap();
-
-        let mut sys = System::new_all();
+        let pid = h.pid().unwrap();
 
 
         let handle = thread::spawn(move || {
-            handle.join().unwrap();
-            println!("child exited");
+            h.join().unwrap();
         });
 
+        let start = Instant::now();
+
+        let pid = Pid::from_u32(pid);
+
         loop {
-            sys.refresh_all();
-            if let Some(sys) = sys.process(Pid::from_u32(pid)) {
-                println!("=====================");
-                println!("cpu: {}", sys.cpu_usage());
-                println!("memory: {}", sys.memory());
-                println!("=====================");
+            sys.refresh_process(pid);
+            sys.refresh_cpu();
+            if let Some(sys) = sys.process(pid) {
+                res.resources.push(ResourceUsage {
+                    cpu: sys.cpu_usage(),
+                    mem: sys.memory(),
+                    elapsed: start.elapsed().as_micros(),
+                });
+                res.cpu_time = sys.start_time();
             }
+
+            //TODO would be nice to get the cpu time... maybe try another crate?
 
             if handle.is_finished() {
                 break;
             }
+
+            thread::sleep(std::time::Duration::from_millis(10));
         }
 
-        println!("parent: {}", std::process::id());
 
-
-        Err(TestError::IsFile)
+        Ok(res)
     }
 }
