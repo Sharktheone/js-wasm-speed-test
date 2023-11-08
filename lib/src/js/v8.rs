@@ -17,7 +17,6 @@ static mut INITIALIZED: bool = false;
 
 
 impl V8 {
-    #[allow(clippy::new_without_default)]
     pub fn new() -> Result<V8, TestError> {
         if unsafe { INITIALIZED } {
             return Err(TestError::AlreadyInitialized);
