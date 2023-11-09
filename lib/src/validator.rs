@@ -1,4 +1,6 @@
-use std::process::Output;
+use std::str::FromStr;
+use reqwest::header::HeaderName;
+use reqwest::Method;
 
 /// # Validator
 /// Validate results
@@ -24,11 +26,21 @@ pub struct File {
 pub struct HTTP {
     pub payload: String,
     pub url: String,
-    pub method: String,
+    pub method: HTTPMethod,
     pub headers: Vec<String>,
 
     pub response: String,
-    pub response_code: u32,
+    pub response_code: u16,
+
+    pub benchmark: bool,
+}
+
+pub enum HTTPMethod {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    PATCH,
 }
 
 pub struct FileResult<'a> {
@@ -48,7 +60,7 @@ pub struct HTTPResult<'a> {
     pub http: &'a HTTP,
     pub result: bool,
     pub response: String,
-    pub response_code: u32,
+    pub response_code: u16,
 }
 
 impl Validator {
@@ -71,7 +83,7 @@ impl Validator {
         self.console.push(content);
     }
 
-    pub fn add_http(&mut self, payload: String, url: String, method: String, headers: Vec<String>, response: String, response_code: u32) {
+    pub fn add_http(&mut self, payload: String, url: String, method: HTTPMethod, headers: Vec<String>, response: String, response_code: u16, benchmark: bool) {
         self.http.push(HTTP {
             payload,
             url,
@@ -79,6 +91,7 @@ impl Validator {
             headers,
             response,
             response_code,
+            benchmark,
         });
     }
 
@@ -134,7 +147,56 @@ impl Validator {
 
 
     pub fn validate_http(&self) -> Vec<HTTPResult> {
-        todo!("Validate http");
+
+        let mut results = vec![];
+
+        for http in &self.http {
+            let mut headers = reqwest::header::HeaderMap::new();
+
+            for header in &http.headers {
+                let mut split = header.split(":");
+                let key = split.next().unwrap();
+                let value = split.next().unwrap();
+
+                let key = HeaderName::from_str(key).unwrap();
+
+                headers.insert(key, value.parse().unwrap());
+            }
+
+
+            let client = reqwest::blocking::Client::new();
+
+            let method = match http.method {
+                HTTPMethod::GET => Method::GET,
+                HTTPMethod::POST => Method::POST,
+                HTTPMethod::PUT => Method::PUT,
+                HTTPMethod::DELETE => Method::DELETE,
+                HTTPMethod::PATCH => Method::PATCH,
+            };
+
+            let res = client.request(method, &http.url) //TODO: try other http crate
+                .headers(headers)
+                .body(http.payload.clone())
+                .send().unwrap();
+
+            let response = res.text().unwrap();
+            let response = response.clone();
+
+            let response_code = res.status().as_u16();
+            let response_code = response_code.clone();
+
+
+            let result = response == http.response && response_code == http.response_code;
+
+            results.push(HTTPResult {
+                http,
+                result,
+                response,
+                response_code,
+            });
+        }
+
+        results
     }
 
 
