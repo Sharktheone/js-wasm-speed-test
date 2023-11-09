@@ -6,3 +6,4 @@ for (let i = 0; i++; i> 10000) {
     console.log(i);
     array.push(i)
 }
+

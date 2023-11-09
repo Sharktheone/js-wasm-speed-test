@@ -2,13 +2,12 @@ use std::{fs, thread};
 use std::path::Path;
 use std::time::Instant;
 
-
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
+use crate::{Engine, ResourceUsage, TestResult};
 use crate::errors::TestError;
 use crate::js::{JSEngine, JSRunner};
-use crate::{Engine, ResourceUsage, TestResult};
 use crate::validator::Validator;
 
 pub struct V8;
@@ -71,13 +70,10 @@ impl JSRunner for V8 {
 
             let code = v8::String::new(s, &file).unwrap();
             let script = v8::Script::compile(s, code, None).unwrap();
-            script.run(s).unwrap();
 
             for _ in 0..1000000 {
                 script.run(s).unwrap();
             }
-
-            println!("child: {}", std::process::id());
         });
 
         let pid = h.pid().unwrap();
