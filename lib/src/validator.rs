@@ -1,6 +1,6 @@
 use std::str::FromStr;
-use reqwest::header::HeaderName;
-use reqwest::Method;
+use http::method::Method;
+use http::request::Request;
 
 /// # Validator
 /// Validate results
@@ -152,13 +152,32 @@ impl Validator {
 
         for http in &self.http {
 
+
+
+
+            let method = match http.method {
+                HTTPMethod::GET => Method::GET,
+                HTTPMethod::POST => Method::POST,
+                HTTPMethod::PUT => Method::PUT,
+                HTTPMethod::DELETE => Method::DELETE,
+                HTTPMethod::PATCH => Method::PATCH,
+            };
+
+            let request = Request::builder()
+                .uri(&http.url)
+                .method(method);
+
             for header in &http.headers {
                 let mut split = header.split(":");
                 let key = split.next().unwrap();
                 let value = split.next().unwrap();
 
+                request.header(key, value);
             }
-remove reqwest
+
+            //TODO hmm, the request crate is not what I thought it was...
+
+            let response;
 
 
 
