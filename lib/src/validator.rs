@@ -151,39 +151,15 @@ impl Validator {
         let mut results = vec![];
 
         for http in &self.http {
-            let mut headers = reqwest::header::HeaderMap::new();
 
             for header in &http.headers {
                 let mut split = header.split(":");
                 let key = split.next().unwrap();
                 let value = split.next().unwrap();
 
-                let key = HeaderName::from_str(key).unwrap();
-
-                headers.insert(key, value.parse().unwrap());
             }
+remove reqwest
 
-
-            let client = reqwest::blocking::Client::new();
-
-            let method = match http.method {
-                HTTPMethod::GET => Method::GET,
-                HTTPMethod::POST => Method::POST,
-                HTTPMethod::PUT => Method::PUT,
-                HTTPMethod::DELETE => Method::DELETE,
-                HTTPMethod::PATCH => Method::PATCH,
-            };
-
-            let res = client.request(method, &http.url) //TODO: try other http crate
-                .headers(headers)
-                .body(http.payload.clone())
-                .send().unwrap();
-
-            let response = res.text().unwrap();
-            let response = response.clone();
-
-            let response_code = res.status().as_u16();
-            let response_code = response_code.clone();
 
 
             let result = response == http.response && response_code == http.response_code;
