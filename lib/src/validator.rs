@@ -85,29 +85,6 @@ impl Validator {
         }
     }
 
-    pub fn add_file(&mut self, path: String, content: String) {
-        self.files.push(File {
-            path,
-            content,
-        });
-    }
-
-    pub fn add_console(&mut self, content: String) {
-        self.console.push(content);
-    }
-
-    pub fn add_http(&mut self, payload: String, url: String, method: HTTPMethod, headers: Vec<String>, response: String, response_code: u16, benchmark: bool) {
-        self.http.push(HTTP {
-            payload,
-            url,
-            method,
-            headers,
-            response,
-            response_code,
-            benchmark,
-        });
-    }
-
     pub fn validate_files(&self) -> Vec<FileResult> {
         let mut results = vec![];
 
