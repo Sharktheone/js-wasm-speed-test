@@ -1,7 +1,10 @@
+use std::mem::ManuallyDrop;
 use std::str::FromStr;
 use std::sync::{Arc, mpsc, Mutex};
 use std::time::Duration;
 
+use futures::executor::LocalPool;
+use futures::task::LocalSpawnExt;
 use reqwest::{Method, RequestBuilder, StatusCode};
 use reqwest::blocking::RequestBuilder as BlockingRequestBuilder;
 use reqwest::header::{HeaderMap, HeaderName};
@@ -15,6 +18,7 @@ use reqwest::header::{HeaderMap, HeaderName};
 
 
 const BENCHMARK_THREADS: u8 = 16;
+const BENCHMARK_TASKS: u16 = 128;
 
 
 pub struct Validator {
@@ -151,8 +155,7 @@ impl Validator {
 
             let mut headers = HeaderMap::new();
             for header in &http.headers {
-                let mut split = header.split(":");
-                // let key = split.next().unwrap().to_owned().parse().unwrap();
+                let mut split = header.split(':');
                 let key = HeaderName::from_str(split.next().unwrap()).unwrap();
                 let value = split.next().to_owned().unwrap().parse().unwrap();
 
@@ -221,19 +224,35 @@ fn benchmark(request: RequestBuilder, threads: u8, duration: Duration) -> Vec<(b
         let finished = Arc::clone(&finished);
         let request = Arc::clone(&request);
         let tx = Arc::clone(&tx);
-        let handle = std::thread::spawn(|| async move {
-            let mut status = vec![];
+        let handle = std::thread::spawn(move || {
+            let mut status = Arc::new(Mutex::new(vec![]));
+
+            let pool = LocalPool::new();
+
+            let spawner = pool.spawner();
+
+
+
             while !*finished.lock().unwrap() {
-                let res = request.try_clone().unwrap().send();
-                status.push(res);
+                let request = Arc::clone(&request);
+                let status = Arc::clone(&status);
+                spawner.spawn_local(
+                    async move {
+                        let res = request.try_clone().unwrap().send().await.unwrap();
+                        let mut status = status.lock().unwrap();
+                        status.push(res);
+                    }
+                ).unwrap();
             }
 
+            let status = Arc::try_unwrap(status).unwrap().into_inner().unwrap();
             let mut res = Vec::with_capacity(status.len());
 
             for status in status {
-                let status = status.await.unwrap(); //TODO this is dumb... we don't need to await somewhere else, so it does the work earlier - tokio?
+                let status = status; //TODO this is dumb... we don't need to await somewhere else, so it does the work earlier - tokio?
+
                 let code = status.status();
-                let text = status.text().await.unwrap();
+                let text = futures::executor::block_on(status.text()).unwrap();
 
                 res.push((false, code, text));
             }
