@@ -282,18 +282,35 @@ fn benchmark_no_validate(request: RequestBuilder, threads: u8, duration: Duratio
 
     for _ in 0..threads {
         let finished = Arc::clone(&finished);
+        let request = Arc::clone(&request);
+
 
         let handle = std::thread::spawn(move || {
             let pool = LocalPool::new();
             let spawner = pool.spawner();
 
             while !*finished.lock().unwrap() {
-
-
+                let request = Arc::clone(&request);
+                spawner.spawn_local( //TODO: does this start immediately? I guess not
+                    async move {
+                        request.try_clone().unwrap().send().await.unwrap();
+                    }
+                ).unwrap();
             }
         });
         handles.push(handle);
     }
+
+    std::thread::sleep(duration);
+
+    let mut finished = finished.lock().unwrap();
+    *finished = true;
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    //TODO: calculate requests/s
 }
 
 fn check(request: BlockingRequestBuilder, response: String, response_code: u16) -> (bool, StatusCode, String) {
