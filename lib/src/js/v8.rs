@@ -45,7 +45,7 @@ impl Drop for V8 {
 }
 
 impl JSRunner for V8 {
-    fn run_js_file(&mut self, path: &Path, _validator: &Validator) -> Result<TestResult, TestError> {
+    fn  run_js_file(&mut self, path: &Path, _validator: &Validator) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
         }

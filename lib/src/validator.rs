@@ -1,4 +1,3 @@
-use std::mem::ManuallyDrop;
 use std::str::FromStr;
 use std::sync::{Arc, mpsc, Mutex};
 use std::time::Duration;
@@ -225,12 +224,11 @@ fn benchmark(request: RequestBuilder, threads: u8, duration: Duration) -> Vec<(b
         let request = Arc::clone(&request);
         let tx = Arc::clone(&tx);
         let handle = std::thread::spawn(move || {
-            let mut status = Arc::new(Mutex::new(vec![]));
+            let status = Arc::new(Mutex::new(vec![]));
 
             let pool = LocalPool::new();
 
             let spawner = pool.spawner();
-
 
 
             while !*finished.lock().unwrap() {
@@ -249,8 +247,6 @@ fn benchmark(request: RequestBuilder, threads: u8, duration: Duration) -> Vec<(b
             let mut res = Vec::with_capacity(status.len());
 
             for status in status {
-                let status = status; //TODO this is dumb... we don't need to await somewhere else, so it does the work earlier - tokio?
-
                 let code = status.status();
                 let text = futures::executor::block_on(status.text()).unwrap();
 
@@ -272,7 +268,32 @@ fn benchmark(request: RequestBuilder, threads: u8, duration: Duration) -> Vec<(b
         res.append(&mut rx.recv().unwrap());
     }
 
+    //TODO: calculate requests/s
+
     res
+}
+
+
+
+fn benchmark_no_validate(request: RequestBuilder, threads: u8, duration: Duration) {
+    let mut handles = vec![];
+    let finished = Arc::new(Mutex::new(false));
+    let request = Arc::new(request);
+
+    for _ in 0..threads {
+        let finished = Arc::clone(&finished);
+
+        let handle = std::thread::spawn(move || {
+            let pool = LocalPool::new();
+            let spawner = pool.spawner();
+
+            while !*finished.lock().unwrap() {
+
+
+            }
+        });
+        handles.push(handle);
+    }
 }
 
 fn check(request: BlockingRequestBuilder, response: String, response_code: u16) -> (bool, StatusCode, String) {
