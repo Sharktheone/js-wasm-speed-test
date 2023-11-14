@@ -78,6 +78,6 @@ fn test_dir(path: &Path) -> Result<Vec<TestResult>, TestError> {
     Ok(results)
 }
 
-fn test_file(path: &Path) -> Result<TestResult, TestError> {
+fn test_file(_path: &Path) -> Result<TestResult, TestError> {
     todo!()
 }

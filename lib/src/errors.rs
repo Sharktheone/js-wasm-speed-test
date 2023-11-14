@@ -21,6 +21,7 @@ impl Display for TestError {
             TestError::AlreadyInitialized => write!(f, "V8 is already initialized"),
             TestError::Other(err) => write!(f, "{}", err),
             TestError::String(err) => write!(f, "{}", err),
+            #[allow(unreachable_patterns)]
             _ => write!(f, "Unknown error"),
         }
     }
