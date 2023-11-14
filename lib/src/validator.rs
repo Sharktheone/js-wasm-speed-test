@@ -1,9 +1,11 @@
 use std::str::FromStr;
-use std::sync::{Arc, mpsc, Mutex};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::thread;
 use std::time::Duration;
 
-use futures::executor::LocalPool;
-use futures::task::LocalSpawnExt;
+use futures::future;
+use futures::lock::Mutex as AsyncMutex;
 use reqwest::{Method, RequestBuilder, StatusCode};
 use reqwest::blocking::RequestBuilder as BlockingRequestBuilder;
 use reqwest::header::{HeaderMap, HeaderName};
@@ -15,9 +17,7 @@ use reqwest::header::{HeaderMap, HeaderName};
 /// - Validate by http response
 /// - Validate by http response code
 
-
-const BENCHMARK_THREADS: u8 = 16;
-const BENCHMARK_TASKS: u16 = 128;
+const BENCHMARK_CONNECTIONS: u16 = 8192;
 
 
 pub struct Validator {
@@ -169,7 +169,7 @@ impl Validator {
                     .body(http.payload.clone());
 
 
-                let res = benchmark(request, BENCHMARK_THREADS, Duration::from_secs(5));
+                let res = benchmark(request, BENCHMARK_CONNECTIONS, Duration::from_secs(5));
 
                 for (success, code, text) in res {
                     results.push(HTTPResult {
@@ -210,107 +210,84 @@ impl Default for Validator {
     }
 }
 
-fn benchmark(request: RequestBuilder, threads: u8, duration: Duration) -> Vec<(bool, StatusCode, String)> {
-    let mut handles = vec![];
-    let finished = Arc::new(Mutex::new(false));
+fn benchmark(request: RequestBuilder, connections: u16, duration: Duration) -> (f64, Vec<(bool, u16, String)>) {
+    static FINISHED: AtomicBool = AtomicBool::new(false);
     let request = Arc::new(request);
-    let mut res = vec![];
-
-    let (tx, rx) = mpsc::channel();
-    let tx = Arc::new(tx);
-
-    for _ in 0..threads {
-        let finished = Arc::clone(&finished);
-        let request = Arc::clone(&request);
-        let tx = Arc::clone(&tx);
-        let handle = std::thread::spawn(move || {
-            let status = Arc::new(Mutex::new(vec![]));
-
-            let pool = LocalPool::new();
-
-            let spawner = pool.spawner();
+    let res = Arc::new(Mutex::new(vec![]));
 
 
-            while !*finished.lock().unwrap() {
-                let request = Arc::clone(&request);
-                let status = Arc::clone(&status);
-                spawner.spawn_local(
-                    async move {
-                        let res = request.try_clone().unwrap().send().await.unwrap();
-                        let mut status = status.lock().unwrap();
-                        status.push(res);
-                    }
-                ).unwrap();
+    let handle = thread::spawn(move || {
+        let tasks = future::join_all((0..connections).map(|_| {
+            let request = Arc::clone(&request);
+            let res = Arc::clone(&res);
+            let status = Arc::new(AsyncMutex::new(vec![]));
+
+
+            async move {
+                while !&FINISHED.load(Ordering::SeqCst) {
+                    let res = request.try_clone().unwrap().send().await.unwrap();
+                    let mut status = status.lock().await;
+                    status.push(res);
+                }
+
+                let status = Arc::try_unwrap(status).unwrap().into_inner();
+                let mut result = Vec::with_capacity(status.len());
+
+                for status in status {
+                    let code = status.status().as_u16();
+                    let text = status.text().await.unwrap();
+
+                    result.push((false, code, text));
+                }
+
+                res.lock().unwrap().append(&mut result);
             }
+        }));
 
-            let status = Arc::try_unwrap(status).unwrap().into_inner().unwrap();
-            let mut res = Vec::with_capacity(status.len());
+        futures::executor::block_on(tasks);
+    });
 
-            for status in status {
-                let code = status.status();
-                let text = futures::executor::block_on(status.text()).unwrap();
+    thread::sleep(duration);
 
-                res.push((false, code, text));
-            }
+    FINISHED.store(true, Ordering::SeqCst);
 
-            tx.send(res).unwrap();
-        });
-
-        handles.push(handle);
-    }
-
-    std::thread::sleep(duration);
-
-    let mut finished = finished.lock().unwrap();
-    *finished = true;
-
-    for _ in handles {
-        res.append(&mut rx.recv().unwrap());
-    }
+    handle.join().unwrap();
 
     //TODO: calculate requests/s
 
-    res
+    (0.0, res.lock().unwrap().to_owned())
 }
 
 
-
-fn benchmark_no_validate(request: RequestBuilder, threads: u8, duration: Duration) {
-    let mut handles = vec![];
-    let finished = Arc::new(Mutex::new(false));
+fn benchmark_no_validate(request: RequestBuilder, connections: u64, duration: Duration) -> f64 {
+    static FINISHED: AtomicBool = AtomicBool::new(false);
+    static REQUESTS: AtomicU64 = AtomicU64::new(0);
     let request = Arc::new(request);
 
-    for _ in 0..threads {
-        let finished = Arc::clone(&finished);
-        let request = Arc::clone(&request);
 
-
-        let handle = std::thread::spawn(move || {
-            let pool = LocalPool::new();
-            let spawner = pool.spawner();
-
-            while !*finished.lock().unwrap() {
-                let request = Arc::clone(&request);
-                spawner.spawn_local( //TODO: does this start immediately? I guess not
-                    async move {
-                        request.try_clone().unwrap().send().await.unwrap();
-                    }
-                ).unwrap();
+    let handle = thread::spawn(move || {
+        let tasks = future::join_all((0..connections).map(|_| {
+            let request = Arc::clone(&request);
+            async move {
+                while !FINISHED.load(Ordering::SeqCst) {
+                    request.try_clone().unwrap().send().await.unwrap();
+                    REQUESTS.fetch_add(1, Ordering::SeqCst);
+                }
             }
-        });
-        handles.push(handle);
-    }
+        }));
 
-    std::thread::sleep(duration);
+        futures::executor::block_on(tasks);
+    });
 
-    let mut finished = finished.lock().unwrap();
-    *finished = true;
+    thread::sleep(duration);
 
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    FINISHED.store(true, Ordering::SeqCst);
+
+    handle.join().unwrap();
 
     //TODO: calculate requests/s
+
+    0.0
 }
 
 fn check(request: BlockingRequestBuilder, response: String, response_code: u16) -> (bool, StatusCode, String) {
