@@ -171,11 +171,11 @@ impl Validator {
 
                 let res = benchmark(request, BENCHMARK_CONNECTIONS, Duration::from_secs(5));
 
-                for (success, code, text) in res {
+                for (success, code, text) in res.1 {
                     results.push(HTTPResult {
                         http,
                         result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
-                        response_code: code.as_u16(),
+                        response_code: code,
                         response: text,
                     });
                 }
@@ -216,10 +216,11 @@ fn benchmark(request: RequestBuilder, connections: u16, duration: Duration) -> (
     let res = Arc::new(Mutex::new(vec![]));
 
 
+    let r = Arc::clone(&res);
     let handle = thread::spawn(move || {
         let tasks = future::join_all((0..connections).map(|_| {
             let request = Arc::clone(&request);
-            let res = Arc::clone(&res);
+            let res = Arc::clone(&r);
             let status = Arc::new(AsyncMutex::new(vec![]));
 
 
@@ -255,7 +256,9 @@ fn benchmark(request: RequestBuilder, connections: u16, duration: Duration) -> (
 
     //TODO: calculate requests/s
 
-    (0.0, res.lock().unwrap().to_owned())
+    let res = Arc::try_unwrap(res).unwrap().into_inner().unwrap();
+
+    (0.0, res)
 }
 
 
