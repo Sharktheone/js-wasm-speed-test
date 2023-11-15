@@ -11,6 +11,7 @@ mod errors;
 pub mod js;
 pub mod wasm;
 pub mod validator;
+mod benchmark;
 
 
 pub struct Test;
