@@ -294,7 +294,7 @@ fn benchmark_no_validate(request: RequestBuilder, connections: u64, duration: Du
 }
 
 fn check(request: BlockingRequestBuilder, response: String, response_code: u16) -> (bool, StatusCode, String) {
-    let handle = std::thread::spawn(|| {
+    let handle = thread::spawn(|| {
         let res = request.send().unwrap();
 
         let code = res.status();

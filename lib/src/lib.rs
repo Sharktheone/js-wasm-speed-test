@@ -3,6 +3,7 @@
 
 pub use test::*;
 use crate::errors::TestError;
+use crate::js::javascriptcore::JavaScriptCore;
 use crate::js::v8::V8;
 
 mod test;
@@ -21,6 +22,10 @@ impl Test {
 
     pub fn v8(&self) -> Result<V8, TestError> {
         V8::new()
+    }
+
+    pub fn javascriptcore(&self) -> Result<JavaScriptCore, TestError> {
+        Ok(JavaScriptCore::new())
     }
 }
 
