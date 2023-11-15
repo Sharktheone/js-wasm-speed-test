@@ -41,7 +41,7 @@ impl JSRunner for JavaScriptCore {
             let context = Context::new();
 
             for _ in 0..1000000 {
-                context.evaluate_script(&file).unwrap();
+                context.evaluate(&file).unwrap();
             }
         });
 
