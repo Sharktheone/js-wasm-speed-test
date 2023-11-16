@@ -1,12 +1,16 @@
 use std::sync::{Arc, Mutex};
-use futures::lock::Mutex as AsyncMutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
+
 use futures::future;
+use futures::lock::Mutex as AsyncMutex;
 use reqwest::RequestBuilder;
 
-pub fn benchmark(request: RequestBuilder, connections: u16, duration: Duration) -> (f64, Vec<(bool, u16, String)>) {
+
+const BENCHMARK_CONNECTIONS: u16 = 8192;
+
+pub fn benchmark(request: RequestBuilder, duration: Duration) -> (f32, Vec<(bool, u16, String)>) {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     let request = Arc::new(request);
     let res = Arc::new(Mutex::new(vec![]));
@@ -14,7 +18,7 @@ pub fn benchmark(request: RequestBuilder, connections: u16, duration: Duration) 
 
     let r = Arc::clone(&res);
     let handle = thread::spawn(move || {
-        let tasks = future::join_all((0..connections).map(|_| {
+        let tasks = future::join_all((0..BENCHMARK_CONNECTIONS).map(|_| {
             let request = Arc::clone(&request);
             let res = Arc::clone(&r);
             let status = Arc::new(AsyncMutex::new(vec![]));
@@ -50,22 +54,23 @@ pub fn benchmark(request: RequestBuilder, connections: u16, duration: Duration) 
 
     handle.join().unwrap();
 
-    //TODO: calculate requests/s
-
     let res = Arc::try_unwrap(res).unwrap().into_inner().unwrap();
 
-    (0.0, res)
+    let rps = res.len() as f32 / duration.as_secs_f32();
+
+
+    (rps, res)
 }
 
 
-pub fn benchmark_no_validate(request: RequestBuilder, connections: u64, duration: Duration) -> f64 {
+pub fn benchmark_no_validate(request: RequestBuilder, duration: Duration) -> f32 {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     static REQUESTS: AtomicU64 = AtomicU64::new(0);
     let request = Arc::new(request);
 
 
     let handle = thread::spawn(move || {
-        let tasks = future::join_all((0..connections).map(|_| {
+        let tasks = future::join_all((0..BENCHMARK_CONNECTIONS).map(|_| {
             let request = Arc::clone(&request);
             async move {
                 while !FINISHED.load(Ordering::SeqCst) {
@@ -84,7 +89,5 @@ pub fn benchmark_no_validate(request: RequestBuilder, connections: u64, duration
 
     handle.join().unwrap();
 
-    //TODO: calculate requests/s
-
-    0.0
+    REQUESTS.load(Ordering::SeqCst) as f32 / duration.as_secs_f32()
 }

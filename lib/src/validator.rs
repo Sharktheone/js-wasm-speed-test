@@ -15,7 +15,7 @@ use crate::benchmark::benchmark;
 /// - Validate by http response
 /// - Validate by http response code
 
-const BENCHMARK_CONNECTIONS: u16 = 8192;
+
 
 
 pub struct Validator {
@@ -167,7 +167,7 @@ impl Validator {
                     .body(http.payload.clone());
 
 
-                let res = benchmark(request, BENCHMARK_CONNECTIONS, Duration::from_secs(5));
+                let res = benchmark(request, Duration::from_secs(5));
 
                 for (success, code, text) in res.1 {
                     results.push(HTTPResult {
