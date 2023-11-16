@@ -10,6 +10,10 @@ use reqwest::RequestBuilder;
 
 const BENCHMARK_CONNECTIONS: u16 = 8192;
 
+
+// We somehow need to get information from the process (cpu usage, memory usage, etc.) to also include it in the benchmark
+// - Maybe just pass the pid to the benchmark function and let it handle it?
+// - Maybe do a ResourceInfo struct and pass it to the benchmark function?
 pub fn benchmark(request: RequestBuilder, duration: Duration) -> (f32, Vec<(bool, u16, String)>) {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     let request = Arc::new(request);
