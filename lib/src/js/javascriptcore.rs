@@ -1,20 +1,19 @@
 use std::fs;
 use std::path::Path;
+
 use javascriptcore::{Context, ContextExt};
+
 use crate::errors::TestError;
 use crate::js::JSRunner;
 use crate::TestResult;
 use crate::validator::Validator;
 
-pub struct JavaScriptCore {
-
-}
+pub struct JavaScriptCore;
 
 impl JavaScriptCore {
     pub fn new() -> Self {
-        JavaScriptCore {}
+        JavaScriptCore
     }
-
 }
 
 impl Default for JavaScriptCore {
