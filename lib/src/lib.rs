@@ -12,6 +12,7 @@ pub mod js;
 pub mod wasm;
 pub mod validator;
 mod benchmark;
+mod resources;
 
 
 pub struct Test;
