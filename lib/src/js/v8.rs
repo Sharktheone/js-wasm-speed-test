@@ -5,9 +5,10 @@ use std::time::Instant;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
-use crate::{Engine, ResourceUsage, TestResult};
+use crate::{Engine, TestResult};
 use crate::errors::TestError;
 use crate::js::{JSEngine, JSRunner};
+use crate::resources::ResourceUsage;
 use crate::validator::Validator;
 
 pub struct V8;

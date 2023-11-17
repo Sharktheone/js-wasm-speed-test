@@ -2,6 +2,7 @@ use std::path::Path;
 
 use crate::errors::TestError;
 use crate::js::JSEngine;
+use crate::resources::ResourceUsage;
 use crate::wasm::WasmEngine;
 
 #[derive(Debug)]
@@ -18,13 +19,6 @@ pub struct TestResult {
     pub resources: Vec<ResourceUsage>,
     pub success: bool,
     pub engine: Engine,
-}
-
-#[derive(Debug)]
-pub struct ResourceUsage {
-    pub cpu: f32,
-    pub mem: u64,
-    pub elapsed: u128,
 }
 
 
