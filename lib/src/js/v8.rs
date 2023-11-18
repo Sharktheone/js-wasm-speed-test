@@ -1,14 +1,15 @@
 use std::{fs, thread};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
+use sysinfo::{ProcessExt, SystemExt};
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
 use crate::{Engine, TestResult};
 use crate::errors::TestError;
 use crate::js::{JSEngine, JSRunner};
-use crate::resources::ResourceUsage;
+use crate::resources::ResourceMonitor;
 use crate::validator::Validator;
 
 pub struct V8;
@@ -46,7 +47,7 @@ impl Drop for V8 {
 }
 
 impl JSRunner for V8 {
-    fn  run_js_file(&mut self, path: &Path, _validator: &Validator) -> Result<TestResult, TestError> {
+    fn run_js_file(&mut self, path: &Path, _validator: &Validator) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
         }
@@ -57,7 +58,6 @@ impl JSRunner for V8 {
 
         let file = fs::read_to_string(path)?;
 
-        let mut sys = System::new_all();
         let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
 
 
@@ -77,6 +77,8 @@ impl JSRunner for V8 {
             }
         });
 
+        let start = Instant::now();
+
         let pid = h.pid().unwrap();
 
 
@@ -84,30 +86,23 @@ impl JSRunner for V8 {
             h.join().unwrap();
         });
 
-        let start = Instant::now();
+        let monitor = ResourceMonitor::new(pid);
+        let monitor = Arc::new(Mutex::new(monitor));
 
-        let pid = Pid::from_u32(pid);
+        let handle2 ={
+            let monitor = Arc::clone(&monitor);
+            thread::spawn(move || {
+                monitor.lock().unwrap().start(&start);
+            })
+        };
 
-        loop {
-            sys.refresh_process(pid);
-            sys.refresh_cpu();
-            if let Some(sys) = sys.process(pid) {
-                res.resources.push(ResourceUsage {
-                    cpu: sys.cpu_usage(),
-                    mem: sys.memory(),
-                    elapsed: start.elapsed().as_micros(),
-                });
-                res.cpu_time = sys.start_time();
-            }
+        handle.join().unwrap();
 
-            //TODO would be nice to get the cpu time... maybe try another crate?
+        monitor.lock().unwrap().stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
 
-            if handle.is_finished() {
-                break;
-            }
+        handle2.join().unwrap();
 
-            thread::sleep(std::time::Duration::from_millis(10));
-        }
+        res.resources = monitor.lock().unwrap().resources.clone();
 
 
         Ok(res)
