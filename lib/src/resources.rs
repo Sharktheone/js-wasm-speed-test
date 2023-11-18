@@ -1,3 +1,4 @@
+use std::thread;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
 #[derive(Debug, Clone)]
@@ -12,7 +13,7 @@ pub struct ResourceMonitor {
     pid: Pid,
     sys: System,
     stop: bool,
-    resources: Vec<ResourceUsage>,
+    pub resources: Vec<ResourceUsage>,
     last: usize,
 }
 
@@ -27,7 +28,7 @@ impl ResourceMonitor {
         }
     }
 
-    pub fn start(&mut self, start: std::time::Instant) {
+    pub fn start(&mut self, start: &std::time::Instant) {
         loop {
             self.sys.refresh_process(self.pid);
             self.sys.refresh_cpu();
@@ -41,6 +42,7 @@ impl ResourceMonitor {
             if self.stop {
                 break;
             }
+            thread::sleep(std::time::Duration::from_millis(10)); //TODO: maybe do this in respect of what time we needed for the loop
         }
     }
 
@@ -48,5 +50,9 @@ impl ResourceMonitor {
         let last = self.last;
         self.last = self.resources.len();
         self.resources.get(last..).unwrap().to_vec()
+    }
+
+    pub fn stop(&mut self) {
+        self.stop = true;
     }
 }
