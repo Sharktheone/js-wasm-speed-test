@@ -22,6 +22,7 @@ pub struct Validator {
     pub files: Vec<File>,
     pub console: Vec<String>,
     pub http: Vec<HTTP>,
+    pub reruns: u32,
 
 }
 
@@ -40,6 +41,7 @@ pub struct HTTP {
     pub response_code: u16,
 
     pub benchmark: bool,
+    pub benchmark_duration: Duration,
 }
 
 pub enum HTTPMethod {
@@ -83,6 +85,7 @@ impl Validator {
             files: vec![],
             console: vec![],
             http: vec![],
+            reruns: 1,
         }
     }
 
@@ -137,8 +140,9 @@ impl Validator {
     }
 
 
-    pub fn validate_http(&self) -> Vec<HTTPResult> {
+    pub fn validate_http(&self) -> (Vec<HTTPResult>, bool) {
         let mut results = vec![];
+        let mut general_success = false;
 
         for http in &self.http {
             let method = match http.method {
@@ -168,8 +172,12 @@ impl Validator {
 
 
                 let res = benchmark(request, Duration::from_secs(5));
+                let mut succeded = 0usize;
 
                 for (success, code, text) in res.1 {
+                    if success {
+                        succeded += 1;
+                    }
                     results.push(HTTPResult {
                         http,
                         result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
@@ -177,6 +185,11 @@ impl Validator {
                         response: text,
                     });
                 }
+                general_success = if succeded > (res.1.len() / 2) {
+                    true
+                } else {
+                    false
+                };
             } else {
                 let client = reqwest::blocking::Client::new();
 
@@ -198,7 +211,7 @@ impl Validator {
             }
         }
 
-        results
+        (results, general_success)
     }
 }
 

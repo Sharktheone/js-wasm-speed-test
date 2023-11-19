@@ -8,6 +8,7 @@ pub enum TestError {
     IsFile,
     InvalidFileType,
     AlreadyInitialized,
+    NotAHTTPTest,
     String(String),
     Other(Box<dyn Error>),
 }
