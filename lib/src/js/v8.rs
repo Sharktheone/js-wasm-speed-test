@@ -47,63 +47,107 @@ impl Drop for V8 {
 }
 
 impl JSRunner for V8 {
-    fn run_js_file(&mut self, path: &Path, _validator: &Validator) -> Result<TestResult, TestError> {
+    fn run_js_file(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
         }
 
-        if path.extension().unwrap().to_str().unwrap() != "js" {
+        if path.extension()?.to_str()? != "js" {
             return Err(TestError::InvalidFileType);
         }
 
         let file = fs::read_to_string(path)?;
 
         let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
-
-
         procspawn::init();
 
-        let h = procspawn::spawn(file, |file| {
+        let reruns = if validator.http.len() > 0 {
+            1
+        } else {
+            validator.reruns
+        };
+
+        let h = procspawn::spawn((file, reruns), |(file, reruns)| {
             let isolate = &mut Isolate::new(Default::default());
             let hs = &mut HandleScope::new(isolate);
             let c = Context::new(hs);
             let s = &mut ContextScope::new(hs, c);
 
-            let code = v8::String::new(s, &file).unwrap();
-            let script = v8::Script::compile(s, code, None).unwrap();
+            let code = v8::String::new(s, &file)?;
+            let script = v8::Script::compile(s, code, None)?;
 
-            for _ in 0..1000000 {
-                script.run(s).unwrap();
+            for _ in 0..reruns {
+                script.run(s)?;
             }
         });
 
         let start = Instant::now();
-
-        let pid = h.pid().unwrap();
-
-
+        let pid = h.pid()?;
         let handle = thread::spawn(move || {
-            h.join().unwrap();
+            h.join()?;
         });
 
         let monitor = ResourceMonitor::new(pid);
         let monitor = Arc::new(Mutex::new(monitor));
 
-        let handle2 ={
+        let handle2 = {
             let monitor = Arc::clone(&monitor);
             thread::spawn(move || {
-                monitor.lock().unwrap().start(&start);
+                monitor.lock()?.start(&start);
             })
         };
 
-        handle.join().unwrap();
+        if validator.http.len() > 0 {
+            let http_res = validator.validate_http()?;
 
-        monitor.lock().unwrap().stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
 
-        handle2.join().unwrap();
+        } else {
+            handle.join()?;
+        }
 
-        res.resources = monitor.lock().unwrap().resources.clone();
+        monitor.lock()?.stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
 
+        handle2.join()?;
+
+        res.resources = monitor.lock()?.resources.clone();
+
+
+        Ok(res)
+    }
+
+    fn validate_http(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError> {
+        if !path.is_file() {
+            return Err(TestError::IsDir);
+        }
+
+        if path.extension()?.to_str()? != "js" {
+            return Err(TestError::InvalidFileType);
+        }
+
+        if validator.http.len() == 0 {
+            return Err(TestError::NotAHTTPTest);
+        }
+
+        let file = fs::read_to_string(path)?;
+
+        let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
+
+        let mut h = procspawn::spawn(file, |file| {
+            let isolate = &mut Isolate::new(Default::default());
+            let hs = &mut HandleScope::new(isolate);
+            let c = Context::new(hs);
+            let s = &mut ContextScope::new(hs, c);
+
+            let code = v8::String::new(s, &file)?;
+            let script = v8::Script::compile(s, code, None)?;
+
+            script.run(s)?;
+        });
+
+        let http_res = validator.validate_http()?;
+
+
+        h.kill()?;
 
         Ok(res)
     }
