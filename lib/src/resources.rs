@@ -52,6 +52,10 @@ impl ResourceMonitor {
         self.resources.get(last..).unwrap().to_vec()
     }
 
+    pub fn get_current_index(&self) -> usize {
+        self.resources.len()
+    }
+
     pub fn stop(&mut self) {
         self.stop = true;
     }
