@@ -28,7 +28,4 @@ pub enum JSEngine {
 
 pub trait JSRunner {
     fn run_js_file(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError>;
-    // maybe a benchmark_http function, because it's so different from just running a file (Doesn't exit by itself etc.)
-
-    fn validate_http(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError>;
 }

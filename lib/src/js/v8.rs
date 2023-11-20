@@ -114,41 +114,4 @@ impl JSRunner for V8 {
 
         Ok(res)
     }
-
-    fn validate_http(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError> {
-        if !path.is_file() {
-            return Err(TestError::IsDir);
-        }
-
-        if path.extension()?.to_str()? != "js" {
-            return Err(TestError::InvalidFileType);
-        }
-
-        if validator.http.len() == 0 {
-            return Err(TestError::NotAHTTPTest);
-        }
-
-        let file = fs::read_to_string(path)?;
-
-        let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
-
-        let mut h = procspawn::spawn(file, |file| {
-            let isolate = &mut Isolate::new(Default::default());
-            let hs = &mut HandleScope::new(isolate);
-            let c = Context::new(hs);
-            let s = &mut ContextScope::new(hs, c);
-
-            let code = v8::String::new(s, &file)?;
-            let script = v8::Script::compile(s, code, None)?;
-
-            script.run(s)?;
-        });
-
-        let http_res = validator.validate_http()?;
-
-
-        h.kill()?;
-
-        Ok(res)
-    }
 }
