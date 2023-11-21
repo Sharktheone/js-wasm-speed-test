@@ -6,7 +6,9 @@ use reqwest::{Method, StatusCode};
 use reqwest::blocking::RequestBuilder as BlockingRequestBuilder;
 use reqwest::header::{HeaderMap, HeaderName};
 
-use crate::benchmark::benchmark;
+use crate::benchmark::{benchmark, benchmark_no_validate};
+use crate::errors::TestError;
+use crate::resources::ResourceMonitor;
 
 /// # Validator
 /// Validate results
@@ -42,6 +44,7 @@ pub struct HTTP {
 
     pub benchmark: bool,
     pub benchmark_duration: Duration,
+    pub benchmark_validate: bool,
 }
 
 pub enum HTTPMethod {
@@ -140,7 +143,7 @@ impl Validator {
     }
 
 
-    pub fn validate_http(&self) -> (Vec<HTTPResult>, bool) {
+    pub fn validate_http(&self, monitor: &ResourceMonitor) -> Result<(Vec<HTTPResult>, bool), TestError> {
         let mut results = vec![];
         let mut general_success = false;
 
@@ -171,21 +174,29 @@ impl Validator {
                     .body(http.payload.clone());
 
 
-                let res = benchmark(request, Duration::from_secs(5));
+                let res = if http.benchmark_validate {
+                    benchmark
+                } else {
+                    benchmark_no_validate
+                }(&request, http.benchmark_duration, monitor)?;
                 let mut succeded = 0usize;
 
-                for (success, code, text) in res.1 {
-                    if success {
-                        succeded += 1;
+                if let Some(status) = res.status {
+                    for (success, code, text) in status {
+                        if success {
+                            succeded += 1;
+                        }
+                        results.push(HTTPResult {
+                            http,
+                            result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
+                            response_code: code,
+                            response: text,
+                        });
                     }
-                    results.push(HTTPResult {
-                        http,
-                        result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
-                        response_code: code,
-                        response: text,
-                    });
                 }
-                general_success = if succeded > (res.1.len() / 2) {
+
+
+                general_success = if succeded > (res.status.unwrap_or_default().len() / 2) {
                     true
                 } else {
                     false
@@ -211,7 +222,7 @@ impl Validator {
             }
         }
 
-        (results, general_success)
+        Ok((results, general_success))
     }
 }
 
