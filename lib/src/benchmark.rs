@@ -7,21 +7,21 @@ use std::time::Duration;
 use futures::future;
 use futures::lock::Mutex as AsyncMutex;
 use reqwest::RequestBuilder;
+use crate::errors::TestError;
 
 use crate::resources::ResourceMonitor;
 
 const BENCHMARK_CONNECTIONS: u16 = 8192;
 
 pub struct BenchmarkResult {
-    rps: f32,
-    results: Option<Vec<(bool, u16, String)>>,
-    usage: (Range<usize>, usize),
+    pub rps: f32,
+    pub status: Option<Vec<(bool, u16, String)>>,
+    pub usage: (Range<usize>, usize),
 }
 
 
-pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> BenchmarkResult {
+pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
-    let request = Arc::new(request);
     let res = Arc::new(Mutex::new(vec![]));
 
     let mut resource_range = Range {
@@ -33,29 +33,28 @@ pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &Resource
     let r = Arc::clone(&res);
     let handle = thread::spawn(move || {
         let tasks = future::join_all((0..BENCHMARK_CONNECTIONS).map(|_| {
-            let request = Arc::clone(&request);
             let res = Arc::clone(&r);
             let status = Arc::new(AsyncMutex::new(vec![]));
 
 
             async move {
                 while !&FINISHED.load(Ordering::SeqCst) {
-                    let res = request.try_clone()?.send().await?;
+                    let res = request.try_clone().unwrap().send().await.unwrap();
                     let mut status = status.lock().await;
                     status.push(res);
                 }
 
-                let status = Arc::try_unwrap(status)?.into_inner();
+                let status = Arc::try_unwrap(status).unwrap().into_inner();
                 let mut result = Vec::with_capacity(status.len());
 
                 for status in status {
                     let code = status.status().as_u16();
-                    let text = status.text().await?;
+                    let text = status.text().await.unwrap();
 
                     result.push((false, code, text));
                 }
 
-                res.lock()?.append(&mut result);
+                res.lock().unwrap().append(&mut result);
             }
         }));
 
@@ -71,20 +70,20 @@ pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &Resource
 
     resource_range.end = monitor.get_current_index();
 
-    let res = Arc::try_unwrap(res)?.into_inner().unwrap();
+    let res = Arc::try_unwrap(res).unwrap().into_inner().unwrap();
 
     let rps = res.len() as f32 / duration.as_secs_f32();
 
 
-    BenchmarkResult {
+    Ok(BenchmarkResult {
         rps,
-        results: Some(res),
+        status: Some(res),
         usage: (resource_range, index_finish_signal),
-    }
+    })
 }
 
 
-pub fn benchmark_no_validate(request: RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> BenchmarkResult {
+pub fn benchmark_no_validate(request: &RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     static REQUESTS: AtomicU64 = AtomicU64::new(0);
     let request = Arc::new(request);
@@ -119,9 +118,9 @@ pub fn benchmark_no_validate(request: RequestBuilder, duration: Duration, monito
 
     let rps = REQUESTS.load(Ordering::SeqCst) as f32 / duration.as_secs_f32();
 
-    BenchmarkResult {
+    Ok(BenchmarkResult {
         rps,
-        results: None,
+        status: None,
         usage: (resource_range, index_finish_signal),
-    }
+    })
 }
