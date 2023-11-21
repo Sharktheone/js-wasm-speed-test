@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -71,8 +72,8 @@ pub struct ConsoleResult<'a> {
 pub struct HTTPResult<'a> {
     pub http: &'a HTTP,
     pub result: HTTPResultType,
-    pub response: String,
-    pub response_code: u16,
+    pub response: Option<String>,
+    pub response_code: Option<u16>,
 }
 
 pub enum HTTPResultType {
@@ -143,11 +144,11 @@ impl Validator {
     }
 
 
-    pub fn validate_http(&self, monitor: &ResourceMonitor) -> Result<(Vec<HTTPResult>, bool), TestError> {
+    pub fn validate_http(&self, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<Vec<HTTPResult>, TestError> {
         let mut results = vec![];
-        let mut general_success = false;
 
         for http in &self.http {
+            let mut success = false;
             let method = match http.method {
                 HTTPMethod::GET => Method::GET,
                 HTTPMethod::POST => Method::POST,
@@ -182,25 +183,28 @@ impl Validator {
                 let mut succeded = 0usize;
 
                 if let Some(status) = res.status {
-                    for (success, code, text) in status {
+                    for (success, _, _) in status {
+                        //TODO: maybe add a field to the http struct if we should add the status code and response body to the results
                         if success {
                             succeded += 1;
                         }
-                        results.push(HTTPResult {
-                            http,
-                            result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
-                            response_code: code,
-                            response: text,
-                        });
                     }
                 }
 
 
-                general_success = if succeded > (res.status.unwrap_or_default().len() / 2) {
+                success = if succeded > (res.status.unwrap_or_default().len() / 2) {
                     true
                 } else {
                     false
                 };
+
+                results.push(HTTPResult {
+                    http,
+                    result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
+                    response_code: None,
+                    response: None,
+                });
+
             } else {
                 let client = reqwest::blocking::Client::new();
 
@@ -216,13 +220,13 @@ impl Validator {
                 results.push(HTTPResult {
                     http,
                     result: if res.0 { HTTPResultType::Success } else { HTTPResultType::Fail },
-                    response_code: res.1.as_u16(),
-                    response: res.2,
+                    response_code: Some(res.1.as_u16()),
+                    response: Some(res.2),
                 });
             }
         }
 
-        Ok((results, general_success))
+        Ok(results)
     }
 }
 

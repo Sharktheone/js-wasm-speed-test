@@ -20,12 +20,12 @@ pub struct BenchmarkResult {
 }
 
 
-pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> Result<BenchmarkResult, TestError> {
+pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     let res = Arc::new(Mutex::new(vec![]));
 
     let mut resource_range = Range {
-        start: monitor.get_current_index(),
+        start: monitor.lock().unwrap().get_current_index(),
         end: 0,
     };
 
@@ -64,11 +64,11 @@ pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &Resourc
     thread::sleep(duration);
 
     FINISHED.store(true, Ordering::SeqCst);
-    let index_finish_signal = monitor.get_current_index();
+    let index_finish_signal = monitor.lock().unwrap().get_current_index();
 
     handle.join().unwrap();
 
-    resource_range.end = monitor.get_current_index();
+    resource_range.end = monitor.lock().unwrap().get_current_index();
 
     let res = Arc::try_unwrap(res).unwrap().into_inner().unwrap();
 
@@ -83,13 +83,13 @@ pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &Resourc
 }
 
 
-pub fn benchmark_no_validate(request: &RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> Result<BenchmarkResult, TestError> {
+pub fn benchmark_no_validate(request: &RequestBuilder, duration: Duration, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     static REQUESTS: AtomicU64 = AtomicU64::new(0);
     let request = Arc::new(request);
 
     let mut resource_range = Range {
-        start: monitor.get_current_index(),
+        start: monitor.lock().unwrap().get_current_index(),
         end: 0,
     };
 
@@ -110,11 +110,11 @@ pub fn benchmark_no_validate(request: &RequestBuilder, duration: Duration, monit
     thread::sleep(duration);
 
     FINISHED.store(true, Ordering::SeqCst);
-    let index_finish_signal = monitor.get_current_index();
+    let index_finish_signal = monitor.lock().unwrap().get_current_index();
 
     handle.join().unwrap();
 
-    resource_range.end = monitor.get_current_index();
+    resource_range.end = monitor.lock().unwrap().get_current_index();
 
     let rps = REQUESTS.load(Ordering::SeqCst) as f32 / duration.as_secs_f32();
 

@@ -3,6 +3,7 @@ use std::path::Path;
 use crate::errors::TestError;
 use crate::js::JSEngine;
 use crate::resources::ResourceUsage;
+use crate::validator::HTTPResult;
 use crate::wasm::WasmEngine;
 
 #[derive(Debug)]
@@ -12,12 +13,13 @@ pub enum Engine {
 }
 
 #[derive(Debug)]
-pub struct TestResult {
+pub struct TestResult<'a> {
     pub path: Box<Path>,
     pub time: u64,
     pub cpu_time: u64,
     pub resources: Vec<ResourceUsage>,
     pub success: bool,
+    pub http: Option<Vec<HTTPResult<'a>>>,
     pub engine: Engine,
 }
 
@@ -30,6 +32,7 @@ impl TestResult {
             cpu_time: 0,
             resources: vec![],
             success: false,
+            http: None,
             engine,
         }
     }

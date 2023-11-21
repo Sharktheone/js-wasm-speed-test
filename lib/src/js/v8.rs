@@ -89,6 +89,7 @@ impl JSRunner for V8 {
 
         let monitor = ResourceMonitor::new(pid);
         let monitor = Arc::new(Mutex::new(monitor));
+        monitor.lock().unwrap().start(&start);
 
         let handle2 = {
             let monitor = Arc::clone(&monitor);
@@ -98,9 +99,10 @@ impl JSRunner for V8 {
         };
 
         if validator.http.len() > 0 {
-            let http_res = validator.validate_http()?;
-
-
+            let monitor = Arc::clone(&monitor);
+            let http_res = validator.validate_http(&monitor)?;
+            handle.kill()?;
+            res.http = Some(http_res);
         } else {
             handle.join()?;
         }
