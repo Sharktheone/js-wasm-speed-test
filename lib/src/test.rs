@@ -24,7 +24,8 @@ pub struct TestResult<'a> {
 }
 
 
-impl TestResult {
+
+impl<'a> TestResult<'a> {
     pub fn new(path: &Path, engine: Engine) -> Self {
         TestResult {
             path: Box::from(path),

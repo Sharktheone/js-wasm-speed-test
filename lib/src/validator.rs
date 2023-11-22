@@ -34,6 +34,7 @@ pub struct File {
     pub content: String,
 }
 
+#[derive(Debug)]
 pub struct HTTP {
     pub payload: String,
     pub url: String,
@@ -48,6 +49,8 @@ pub struct HTTP {
     pub benchmark_validate: bool,
 }
 
+
+#[derive(Debug)]
 pub enum HTTPMethod {
     GET,
     POST,
@@ -69,6 +72,7 @@ pub struct ConsoleResult<'a> {
     pub res_individually: Vec<bool>,
 }
 
+#[derive(Debug)]
 pub struct HTTPResult<'a> {
     pub http: &'a HTTP,
     pub result: HTTPResultType,
@@ -76,6 +80,8 @@ pub struct HTTPResult<'a> {
     pub response_code: Option<u16>,
 }
 
+
+#[derive(Debug)]
 pub enum HTTPResultType {
     Success,
     Partial,
@@ -182,10 +188,10 @@ impl Validator {
                 }(&request, http.benchmark_duration, monitor)?;
                 let mut succeded = 0usize;
 
-                if let Some(status) = res.status {
+                if let Some(status) = &res.status {
                     for (success, _, _) in status {
                         //TODO: maybe add a field to the http struct if we should add the status code and response body to the results
-                        if success {
+                        if *success {
                             succeded += 1;
                         }
                     }

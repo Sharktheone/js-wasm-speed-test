@@ -1,6 +1,8 @@
+use std::any::Any;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Error as IoError;
+use std::sync::{MutexGuard, PoisonError};
 
 #[derive(Debug)]
 pub enum TestError {
@@ -36,5 +38,10 @@ impl From<IoError> for TestError {
     }
 }
 
+impl From<Box<dyn Error>> for TestError {
+    fn from(err: Box<dyn Error>) -> Self {
+        TestError::Other(err)
+    }
+}
 
 impl Error for TestError {}

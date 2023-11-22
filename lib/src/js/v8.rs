@@ -3,7 +3,6 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use sysinfo::{ProcessExt, SystemExt};
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
 use crate::{Engine, TestResult};
@@ -52,7 +51,7 @@ impl JSRunner for V8 {
             return Err(TestError::IsDir);
         }
 
-        if path.extension()?.to_str()? != "js" {
+        if path.extension().unwrap().to_str().unwrap() != "js" {
             return Err(TestError::InvalidFileType);
         }
 
@@ -67,25 +66,22 @@ impl JSRunner for V8 {
             validator.reruns
         };
 
-        let h = procspawn::spawn((file, reruns), |(file, reruns)| {
+        let mut h = procspawn::spawn((file, reruns), |(file, reruns)| {
             let isolate = &mut Isolate::new(Default::default());
             let hs = &mut HandleScope::new(isolate);
             let c = Context::new(hs);
             let s = &mut ContextScope::new(hs, c);
 
-            let code = v8::String::new(s, &file)?;
-            let script = v8::Script::compile(s, code, None)?;
+            let code = v8::String::new(s, &file).unwrap();
+            let script = v8::Script::compile(s, code, None).unwrap();
 
             for _ in 0..reruns {
-                script.run(s)?;
+                script.run(s).unwrap();
             }
         });
 
         let start = Instant::now();
-        let pid = h.pid()?;
-        let handle = thread::spawn(move || {
-            h.join()?;
-        });
+        let pid = h.pid().unwrap();
 
         let monitor = ResourceMonitor::new(pid);
         let monitor = Arc::new(Mutex::new(monitor));
@@ -94,24 +90,24 @@ impl JSRunner for V8 {
         let handle2 = {
             let monitor = Arc::clone(&monitor);
             thread::spawn(move || {
-                monitor.lock()?.start(&start);
+                monitor.lock().unwrap().start(&start);
             })
         };
 
         if validator.http.len() > 0 {
             let monitor = Arc::clone(&monitor);
             let http_res = validator.validate_http(&monitor)?;
-            handle.kill()?;
+            h.kill().unwrap();
             res.http = Some(http_res);
         } else {
-            handle.join()?;
+            h.join().unwrap();
         }
 
-        monitor.lock()?.stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
+        monitor.lock().unwrap().stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
 
-        handle2.join()?;
+        handle2.join().unwrap();
 
-        res.resources = monitor.lock()?.resources.clone();
+        res.resources = monitor.lock().unwrap().resources.clone();
 
 
         Ok(res)
