@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::sync::atomic::AtomicBool;
 use std::sync::RwLock;
 use std::thread;
@@ -11,7 +10,6 @@ pub struct ResourceUsage {
     pub mem: u64,
     pub elapsed: u128,
 }
-
 
 #[derive(Debug)]
 pub struct ResourceMonitor {
@@ -56,7 +54,7 @@ impl ResourceMonitor {
         let last = self.last;
         let resources = self.resources.read().unwrap();
         self.last = resources.len();
-       resources.get(last..).unwrap().to_vec()
+        resources.get(last..).unwrap().to_vec()
     }
 
     pub fn get_current_index(&self) -> usize {

@@ -1,21 +1,20 @@
 use std::{fs, thread};
-use std::cell::RefCell;
+
 use std::path::Path;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
 use std::time::Instant;
 
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
-use crate::{Engine, TestResult};
 use crate::errors::TestError;
 use crate::js::{JSEngine, JSRunner};
 use crate::resources::ResourceMonitor;
 use crate::validator::Validator;
+use crate::{Engine, TestResult};
 
 pub struct V8;
 
 static mut INITIALIZED: bool = false;
-
 
 impl V8 {
     pub fn new() -> Result<V8, TestError> {
@@ -30,7 +29,6 @@ impl V8 {
         unsafe {
             INITIALIZED = true;
         }
-
 
         Ok(V8)
     }
@@ -47,7 +45,11 @@ impl Drop for V8 {
 }
 
 impl JSRunner for V8 {
-    fn run_js_file<'a>(&'a mut self, path: &Path, validator: &'a Validator) -> Result<TestResult, TestError> {
+    fn run_js_file<'a>(
+        &'a mut self,
+        path: &Path,
+        validator: &'a Validator,
+    ) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
         }
@@ -91,7 +93,6 @@ impl JSRunner for V8 {
             let monitor = Arc::clone(&monitor);
             thread::spawn(move || {
                 monitor.start(&start);
-
             })
         };
 
@@ -112,7 +113,6 @@ impl JSRunner for V8 {
         handle.join().unwrap();
 
         // res.resources = monitor.resources.clone();
-
 
         Ok(res)
     }

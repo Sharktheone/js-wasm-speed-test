@@ -1,14 +1,13 @@
-use std::cell::RefCell;
 use std::ops::Range;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
+use crate::errors::TestError;
 use futures::future;
 use futures::lock::Mutex as AsyncMutex;
 use reqwest::RequestBuilder;
-use crate::errors::TestError;
 
 use crate::resources::ResourceMonitor;
 
@@ -20,8 +19,11 @@ pub struct BenchmarkResult {
     pub usage: (Range<usize>, usize),
 }
 
-
-pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> Result<BenchmarkResult, TestError> {
+pub fn benchmark(
+    request: RequestBuilder,
+    duration: Duration,
+    monitor: &ResourceMonitor,
+) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     let res = Arc::new(Mutex::new(vec![]));
     let request = Arc::new(request);
@@ -30,7 +32,6 @@ pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &Resource
         start: monitor.get_current_index(),
         end: 0,
     };
-
 
     let r = Arc::clone(&res);
     let handle = thread::spawn(move || {
@@ -76,7 +77,6 @@ pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &Resource
 
     let rps = res.len() as f32 / duration.as_secs_f32();
 
-
     Ok(BenchmarkResult {
         rps,
         status: Some(res),
@@ -84,8 +84,11 @@ pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &Resource
     })
 }
 
-
-pub fn benchmark_no_validate(request: RequestBuilder, duration: Duration, monitor: &ResourceMonitor) -> Result<BenchmarkResult, TestError> {
+pub fn benchmark_no_validate(
+    request: RequestBuilder,
+    duration: Duration,
+    monitor: &ResourceMonitor,
+) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     static REQUESTS: AtomicU64 = AtomicU64::new(0);
     let request = Arc::new(request);
