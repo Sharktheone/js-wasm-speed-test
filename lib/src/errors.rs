@@ -1,8 +1,6 @@
-use std::any::Any;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::io::Error as IoError;
-use std::sync::{MutexGuard, PoisonError};
 
 #[derive(Debug)]
 pub enum TestError {

@@ -20,9 +20,10 @@ pub struct BenchmarkResult {
 }
 
 
-pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<BenchmarkResult, TestError> {
+pub fn benchmark(request: RequestBuilder, duration: Duration, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     let res = Arc::new(Mutex::new(vec![]));
+    let request = Arc::new(request);
 
     let mut resource_range = Range {
         start: monitor.lock().unwrap().get_current_index(),
@@ -35,7 +36,7 @@ pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &Arc<Mut
         let tasks = future::join_all((0..BENCHMARK_CONNECTIONS).map(|_| {
             let res = Arc::clone(&r);
             let status = Arc::new(AsyncMutex::new(vec![]));
-
+            let request = Arc::clone(&request);
 
             async move {
                 while !&FINISHED.load(Ordering::SeqCst) {
@@ -83,7 +84,7 @@ pub fn benchmark(request: &RequestBuilder, duration: Duration, monitor: &Arc<Mut
 }
 
 
-pub fn benchmark_no_validate(request: &RequestBuilder, duration: Duration, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<BenchmarkResult, TestError> {
+pub fn benchmark_no_validate(request: RequestBuilder, duration: Duration, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<BenchmarkResult, TestError> {
     static FINISHED: AtomicBool = AtomicBool::new(false);
     static REQUESTS: AtomicU64 = AtomicU64::new(0);
     let request = Arc::new(request);

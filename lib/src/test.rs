@@ -6,26 +6,26 @@ use crate::resources::ResourceUsage;
 use crate::validator::HTTPResult;
 use crate::wasm::WasmEngine;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Engine {
     Wasm(WasmEngine),
     JS(JSEngine),
 }
 
-#[derive(Debug)]
-pub struct TestResult<'a> {
+#[derive(Debug, Clone)]
+pub struct TestResult {
     pub path: Box<Path>,
     pub time: u64,
     pub cpu_time: u64,
     pub resources: Vec<ResourceUsage>,
     pub success: bool,
-    pub http: Option<Vec<HTTPResult<'a>>>,
+    pub http: Option<Vec<HTTPResult>>,
     pub engine: Engine,
 }
 
 
 
-impl<'a> TestResult<'a> {
+impl TestResult {
     pub fn new(path: &Path, engine: Engine) -> Self {
         TestResult {
             path: Box::from(path),
@@ -57,8 +57,8 @@ fn test_dir(path: &Path) -> Result<Vec<TestResult>, TestError> {
         let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
-            let res = &mut test_dir(&path)?;
-            results.append(res);
+            let mut res = test_dir(&path)?;
+            results.append(&mut res);
         } else {
             let res = test_file(&path);
             if let Ok(res) = res {

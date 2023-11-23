@@ -72,16 +72,16 @@ pub struct ConsoleResult<'a> {
     pub res_individually: Vec<bool>,
 }
 
-#[derive(Debug)]
-pub struct HTTPResult<'a> {
-    pub http: &'a HTTP,
+#[derive(Debug, Clone)]
+pub struct HTTPResult {
+    pub index: usize,
     pub result: HTTPResultType,
     pub response: Option<String>,
     pub response_code: Option<u16>,
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum HTTPResultType {
     Success,
     Partial,
@@ -153,8 +153,7 @@ impl Validator {
     pub fn validate_http(&self, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<Vec<HTTPResult>, TestError> {
         let mut results = vec![];
 
-        for http in &self.http {
-            let mut success = false;
+        for (idx, http) in self.http.iter().enumerate()  {
             let method = match http.method {
                 HTTPMethod::GET => Method::GET,
                 HTTPMethod::POST => Method::POST,
@@ -185,7 +184,7 @@ impl Validator {
                     benchmark
                 } else {
                     benchmark_no_validate
-                }(&request, http.benchmark_duration, monitor)?;
+                }(request, http.benchmark_duration, monitor)?;
                 let mut succeded = 0usize;
 
                 if let Some(status) = &res.status {
@@ -198,15 +197,15 @@ impl Validator {
                 }
 
 
-                success = if succeded > (res.status.unwrap_or_default().len() / 2) {
-                    true
+                let success = if succeded > (res.status.unwrap_or_default().len() / 2) {
+                    HTTPResultType::Success
                 } else {
-                    false
+                    HTTPResultType::Fail
                 };
 
                 results.push(HTTPResult {
-                    http,
-                    result: if success { HTTPResultType::Success } else { HTTPResultType::Fail },
+                    index: idx,
+                    result: success,
                     response_code: None,
                     response: None,
                 });
@@ -222,9 +221,8 @@ impl Validator {
 
 
                 let res = check(request, http.response.clone(), http.response_code);
-
                 results.push(HTTPResult {
-                    http,
+                    index: idx,
                     result: if res.0 { HTTPResultType::Success } else { HTTPResultType::Fail },
                     response_code: Some(res.1.as_u16()),
                     response: Some(res.2),

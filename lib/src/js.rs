@@ -11,7 +11,7 @@ pub(crate) mod chakra;
 pub(crate) mod duktape;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum JSEngine {
     V8, //https://v8.dev/
     SpiderMonkey, //https://spidermonkey.dev/
@@ -27,5 +27,5 @@ pub enum JSEngine {
 
 
 pub trait JSRunner {
-    fn run_js_file(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError>;
+    fn run_js_file<'a>(&'a mut self, path: &Path, validator: &'a Validator) -> Result<TestResult, TestError>;
 }

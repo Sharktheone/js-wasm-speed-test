@@ -23,7 +23,7 @@ impl Default for JavaScriptCore {
 }
 
 impl JSRunner for JavaScriptCore {
-    fn run_js_file(&mut self, path: &Path, validator: &Validator) -> Result<TestResult, TestError> {
+    fn run_js_file<'a>(&'a mut self, path: &Path, _validator: &'a Validator) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
         }
