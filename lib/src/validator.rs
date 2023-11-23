@@ -1,5 +1,4 @@
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -150,7 +149,7 @@ impl Validator {
     }
 
 
-    pub fn validate_http(&self, monitor: &Arc<Mutex<ResourceMonitor>>) -> Result<Vec<HTTPResult>, TestError> {
+    pub fn validate_http(&self, monitor: &ResourceMonitor) -> Result<Vec<HTTPResult>, TestError> {
         let mut results = vec![];
 
         for (idx, http) in self.http.iter().enumerate()  {

@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let test = lib::Test::new();
 
-    let mut v8 = test.javascriptcore()?;
+    let mut v8 = test.v8()?;
 
     let validator = Default::default();
 

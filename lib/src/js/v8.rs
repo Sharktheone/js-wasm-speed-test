@@ -1,6 +1,7 @@
 use std::{fs, thread};
+use std::cell::RefCell;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Instant;
 
 use v8::{Context, ContextScope, HandleScope, Isolate};
@@ -60,7 +61,7 @@ impl JSRunner for V8 {
         let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
         procspawn::init();
 
-        let reruns = if validator.http.len() > 0 {
+        let reruns = if !validator.http.is_empty() {
             1
         } else {
             validator.reruns
@@ -84,17 +85,17 @@ impl JSRunner for V8 {
         let pid = h.pid().unwrap();
 
         let monitor = ResourceMonitor::new(pid);
-        let monitor = Arc::new(Mutex::new(monitor));
-        monitor.lock().unwrap().start(&start);
+        let monitor = Arc::new(monitor);
 
-        let handle2 = {
+        let handle = {
             let monitor = Arc::clone(&monitor);
             thread::spawn(move || {
-                monitor.lock().unwrap().start(&start);
+                monitor.start(&start);
+
             })
         };
 
-        if validator.http.len() > 0 {
+        if !validator.http.is_empty() {
             let monitor = Arc::clone(&monitor);
             let http_res = validator.validate_http(&monitor)?;
             h.kill().unwrap();
@@ -103,11 +104,14 @@ impl JSRunner for V8 {
             h.join().unwrap();
         }
 
-        monitor.lock().unwrap().stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
+        let monitor = Arc::clone(&monitor);
+        monitor.stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
 
-        handle2.join().unwrap();
+        println!("stopped");
 
-        res.resources = monitor.lock().unwrap().resources.clone();
+        handle.join().unwrap();
+
+        // res.resources = monitor.resources.clone();
 
 
         Ok(res)
