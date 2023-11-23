@@ -23,8 +23,6 @@ pub struct TestResult {
     pub engine: Engine,
 }
 
-
-
 impl TestResult {
     pub fn new(path: &Path, engine: Engine) -> Self {
         TestResult {
@@ -37,9 +35,7 @@ impl TestResult {
             engine,
         }
     }
-
 }
-
 
 pub fn test(path: &Path) -> Result<Vec<TestResult>, TestError> {
     if path.is_dir() {

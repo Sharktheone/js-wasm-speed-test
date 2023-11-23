@@ -1,5 +1,1 @@
-
-
-pub struct V8 {
-
-}
+pub struct V8 {}

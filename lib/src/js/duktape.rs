@@ -1,5 +1,3 @@
-
-
 pub struct Duktape;
 
 impl Duktape {

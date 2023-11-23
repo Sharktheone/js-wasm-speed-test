@@ -1,5 +1,3 @@
-
-
 pub struct Deno;
 
 impl Deno {

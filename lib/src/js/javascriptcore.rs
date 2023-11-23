@@ -5,8 +5,8 @@ use javascriptcore::{Context, ContextExt};
 
 use crate::errors::TestError;
 use crate::js::JSRunner;
-use crate::TestResult;
 use crate::validator::Validator;
+use crate::TestResult;
 
 pub struct JavaScriptCore;
 
@@ -23,7 +23,11 @@ impl Default for JavaScriptCore {
 }
 
 impl JSRunner for JavaScriptCore {
-    fn run_js_file<'a>(&'a mut self, path: &Path, _validator: &'a Validator) -> Result<TestResult, TestError> {
+    fn run_js_file<'a>(
+        &'a mut self,
+        path: &Path,
+        _validator: &'a Validator,
+    ) -> Result<TestResult, TestError> {
         if !path.is_file() {
             return Err(TestError::IsDir);
         }
@@ -45,7 +49,6 @@ impl JSRunner for JavaScriptCore {
         });
 
         h.join().unwrap();
-
 
         Err(TestError::IsDir)
     }

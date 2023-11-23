@@ -1,5 +1,1 @@
-
-
-pub struct JavaScriptCore {
-}
-
+pub struct JavaScriptCore {}

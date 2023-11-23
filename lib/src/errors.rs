@@ -28,8 +28,6 @@ impl Display for TestError {
     }
 }
 
-
-
 impl From<IoError> for TestError {
     fn from(err: IoError) -> Self {
         TestError::Other(Box::new(err))

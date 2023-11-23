@@ -1,19 +1,17 @@
 #![allow(dead_code)] // shut up
 
-
-pub use test::*;
 use crate::errors::TestError;
 use crate::js::javascriptcore::JavaScriptCore;
 use crate::js::v8::V8;
+pub use test::*;
 
-mod test;
+mod benchmark;
 mod errors;
 pub mod js;
-pub mod wasm;
-pub mod validator;
-mod benchmark;
 mod resources;
-
+mod test;
+pub mod validator;
+pub mod wasm;
 
 pub struct Test;
 
@@ -30,7 +28,6 @@ impl Test {
         Ok(JavaScriptCore::new())
     }
 }
-
 
 impl Default for Test {
     fn default() -> Self {

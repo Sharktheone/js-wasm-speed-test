@@ -1,4 +1,1 @@
-
-
-pub struct SpiderMonkey {
-}
+pub struct SpiderMonkey {}

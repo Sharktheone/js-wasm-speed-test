@@ -1,5 +1,1 @@
-
-
-pub struct Wasmer {
-
-}
+pub struct Wasmer {}

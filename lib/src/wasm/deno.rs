@@ -1,5 +1,1 @@
-
-
-pub struct Deno {
-
-}
+pub struct Deno {}
