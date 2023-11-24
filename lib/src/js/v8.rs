@@ -1,16 +1,12 @@
-use std::{fs, thread};
-
 use std::path::Path;
-use std::sync::Arc;
-use std::time::Instant;
 
 use v8::{Context, ContextScope, HandleScope, Isolate};
 
+use crate::{Engine, TestResult};
 use crate::errors::TestError;
 use crate::js::{JSEngine, JSRunner};
-use crate::resources::ResourceMonitor;
+use crate::js::runner::run;
 use crate::validator::Validator;
-use crate::{Engine, TestResult};
 
 pub struct V8;
 
@@ -50,70 +46,21 @@ impl JSRunner for V8 {
         path: &Path,
         validator: &'a Validator,
     ) -> Result<TestResult, TestError> {
-        if !path.is_file() {
-            return Err(TestError::IsDir);
-        }
+        run(path,
+            validator,
+            Engine::JS(JSEngine::V8),
+            |(file, reruns)| {
+                let isolate = &mut Isolate::new(Default::default());
+                let hs = &mut HandleScope::new(isolate);
+                let c = Context::new(hs);
+                let s = &mut ContextScope::new(hs, c);
 
-        if path.extension().unwrap().to_str().unwrap() != "js" {
-            return Err(TestError::InvalidFileType);
-        }
+                let code = v8::String::new(s, &file).unwrap();
+                let script = v8::Script::compile(s, code, None).unwrap();
 
-        let file = fs::read_to_string(path)?;
-
-        let mut res = TestResult::new(path, Engine::JS(JSEngine::V8));
-        procspawn::init();
-
-        let reruns = if !validator.http.is_empty() {
-            1
-        } else {
-            validator.reruns
-        };
-
-        let mut h = procspawn::spawn((file, reruns), |(file, reruns)| {
-            let isolate = &mut Isolate::new(Default::default());
-            let hs = &mut HandleScope::new(isolate);
-            let c = Context::new(hs);
-            let s = &mut ContextScope::new(hs, c);
-
-            let code = v8::String::new(s, &file).unwrap();
-            let script = v8::Script::compile(s, code, None).unwrap();
-
-            for _ in 0..reruns {
-                script.run(s).unwrap();
-            }
-        });
-
-        let start = Instant::now();
-        let pid = h.pid().unwrap();
-
-        let monitor = ResourceMonitor::new(pid);
-        let monitor = Arc::new(monitor);
-
-        let handle = {
-            let monitor = Arc::clone(&monitor);
-            thread::spawn(move || {
-                monitor.start(&start);
+                for _ in 0..reruns {
+                    script.run(s).unwrap();
+                }
             })
-        };
-
-        if !validator.http.is_empty() {
-            let monitor = Arc::clone(&monitor);
-            let http_res = validator.validate_http(&monitor)?;
-            h.kill().unwrap();
-            res.http = Some(http_res);
-        } else {
-            h.join().unwrap();
-        }
-
-        let monitor = Arc::clone(&monitor);
-        monitor.stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
-
-        println!("stopped");
-
-        handle.join().unwrap();
-
-        // res.resources = monitor.resources.clone();
-
-        Ok(res)
     }
 }

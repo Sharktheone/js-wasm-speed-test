@@ -9,6 +9,7 @@ pub(crate) mod duktape;
 pub(crate) mod javascriptcore;
 pub(crate) mod spidermonkey;
 pub(crate) mod v8;
+mod runner;
 
 #[derive(Debug, Clone)]
 pub enum JSEngine {
