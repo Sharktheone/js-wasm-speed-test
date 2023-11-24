@@ -26,7 +26,7 @@ pub struct Validator {
 
 pub struct File {
     pub path: String,
-    pub content: String,
+    pub sha256: String,
 }
 
 #[derive(Debug)]
@@ -55,7 +55,7 @@ pub enum HTTPMethod {
 
 pub struct FileResult<'a> {
     pub file: &'a File,
-    pub output: String,
+    pub sha256: String,
     pub result: bool,
 }
 
@@ -96,12 +96,14 @@ impl Validator {
         let mut results = vec![];
 
         for file in &self.files {
-            let output = std::fs::read_to_string(&file.path).unwrap();
-            let result = output == file.content;
+            let output_bytes = std::fs::read(&file.path).unwrap();
+
+            let checksum = sha256::digest(&output_bytes);
+            let result = checksum == file.sha256;
 
             results.push(FileResult {
                 file,
-                output,
+                sha256: checksum,
                 result,
             });
         }
