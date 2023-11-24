@@ -1,12 +1,12 @@
-use std::fs;
 use std::path::Path;
 
 use javascriptcore::{Context, ContextExt};
 
+use crate::{Engine, TestResult};
 use crate::errors::TestError;
-use crate::js::JSRunner;
+use crate::js::{JSEngine, JSRunner};
+use crate::js::runner::run;
 use crate::validator::Validator;
-use crate::TestResult;
 
 pub struct JavaScriptCore;
 
@@ -26,30 +26,16 @@ impl JSRunner for JavaScriptCore {
     fn run_js_file<'a>(
         &'a mut self,
         path: &Path,
-        _validator: &'a Validator,
+        validator: &'a Validator,
     ) -> Result<TestResult, TestError> {
-        if !path.is_file() {
-            return Err(TestError::IsDir);
-        }
-
-        if path.extension().unwrap().to_str().unwrap() != "js" {
-            return Err(TestError::InvalidFileType);
-        }
-
-        let file = fs::read_to_string(path)?;
-
-        procspawn::init();
-
-        let h = procspawn::spawn(file, |file| {
-            let context = Context::new();
-
-            for _ in 0..1000000 {
-                context.evaluate(&file).unwrap();
-            }
-        });
-
-        h.join().unwrap();
-
-        Err(TestError::IsDir)
+        run(path,
+            validator,
+            Engine::JS(JSEngine::JavaScriptCore),
+            |(file, reruns)| {
+                let context = Context::new();
+                for _ in 0..reruns {
+                    context.evaluate(&file).unwrap();
+                }
+            })
     }
 }

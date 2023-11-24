@@ -64,7 +64,7 @@ pub(super) fn run(
 
     handle.join().unwrap();
 
-    // res.resources = monitor.resources.clone();
+    res.resources = monitor.resources.read().unwrap().to_vec();
 
     Ok(res)
 }

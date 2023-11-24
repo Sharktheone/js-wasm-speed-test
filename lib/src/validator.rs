@@ -19,7 +19,7 @@ use crate::resources::ResourceMonitor;
 
 pub struct Validator {
     pub files: Vec<File>,
-    pub console: Vec<String>,
+    pub console: Vec<String>, //TODO
     pub http: Vec<HTTP>,
     pub reruns: u32,
 }
