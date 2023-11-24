@@ -9,6 +9,7 @@ edition = "2021"
 deno_core = "0.232.0"
 futures = "0.3.29"
 javascriptcore-rs = "1.1.2"
+kg-js = "0.8.4"
 mozjs = "0.10.1"
 nix = { version = "0.27.1", features = ["resource"] }
 procspawn = "1.0.0"
