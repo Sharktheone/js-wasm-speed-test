@@ -4,6 +4,11 @@ use crate::errors::TestError;
 use crate::js::javascriptcore::JavaScriptCore;
 use crate::js::v8::V8;
 pub use test::*;
+use crate::js::{JSRunner};
+use crate::js::chakra::Chakra;
+use crate::js::deno::Deno;
+use crate::js::duktape::Duktape;
+use crate::js::spidermonkey::SpiderMonkey;
 
 mod benchmark;
 mod errors;
@@ -20,13 +25,32 @@ impl Test {
         Test
     }
 
-    pub fn v8(&self) -> Result<V8, TestError> {
-        V8::new()
+    pub fn v8(&self) -> Result<&impl JSRunner, TestError> {
+        Ok(&V8::new()?)
     }
 
-    pub fn javascriptcore(&self) -> Result<JavaScriptCore, TestError> {
-        Ok(JavaScriptCore::new())
+    pub fn javascriptcore(&self) -> Result<&impl JSRunner, TestError> {
+        Ok(&JavaScriptCore::new())
     }
+
+    pub fn deno(&self) -> Result<&impl JSRunner, TestError> {
+        Ok(&Deno::new())
+    }
+
+    pub fn spidermonkey(&self) -> Result<&impl JSRunner, TestError> {
+       Ok(&SpiderMonkey::new())
+    }
+
+    pub fn chakra(&self) -> Result<&impl JSRunner, TestError> {
+        Ok(&Chakra::new())
+    }
+
+    pub fn duktape(&self) -> Result<&impl JSRunner, TestError> {
+        Ok(&Duktape::new())
+    }
+
+
+
 }
 
 impl Default for Test {

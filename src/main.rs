@@ -1,23 +1,35 @@
+use std::env;
 use std::error::Error;
 use std::path::Path;
 use lib::js::JSRunner;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // let path = env::args().nth(1).unwrap();
-
-    let path = Path::new("test.js");
+    let path = env::args().nth(1).unwrap();
+    let engine = env::args().nth(2).unwrap();
+    let path = Path::new(&path);
 
     let test = lib::Test::new();
 
-    let mut v8 = test.v8()?;
+    if path.extension().unwrap().eq("js") {
+        let mut engine = match engine.to_lowercase().as_str() {
+            "duktape" | "dt" => test.duktape()?,
+            "javascriptcore" | "jsc" => test.javascriptcore()?,
+            "v8" => test.v8()?,
+            "deno" => test.deno()?,
+            "spidermonkey" | "sm" | "mozjs" => test.spidermonkey()?,
+            "chakra" | "ck" | "cc" | "chakracore" => test.chakra()?,
+            _ => return Err(Box::from("Unknown engine")),
+        };
 
-    let validator = Default::default();
+        let validator = Default::default();
 
-    let res = v8.run_js_file(path, &validator)?;
+        let res = engine.run_js_file(path, &validator)?;
 
-    println!("{:?}", res);
+        println!("{:?}", res);
 
-
+    } else {
+        return Err(Box::from("Not a JS file; WASM not supported yet"));
+    }
 
     Ok(())
 }
