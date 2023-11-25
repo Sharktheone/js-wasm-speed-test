@@ -29,9 +29,9 @@ impl JSRunner for Deno {
             Engine::JS(JSEngine::Deno),
             |(file, reruns)| {
                 let mut runtime = JsRuntime::new(Default::default());
-                let code = ModuleCode::from(file);
                 for _ in 0..reruns {
-                    let _ = runtime.execute_script("test", code.try_clone().unwrap()).unwrap();
+                    let code = ModuleCode::from(file.clone());
+                    let _ = runtime.execute_script("test", code).unwrap();
                 }
             })
     }
