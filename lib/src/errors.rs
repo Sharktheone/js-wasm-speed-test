@@ -11,6 +11,7 @@ pub enum TestError {
     NotAHTTPTest,
     String(String),
     Other(Box<dyn Error>),
+    FeatureNotEnabled(&'static str),
 }
 
 impl Display for TestError {

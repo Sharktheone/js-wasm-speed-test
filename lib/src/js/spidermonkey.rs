@@ -1,8 +1,5 @@
-use std::path::Path;
-
-use mozjs::rooted;
-use mozjs::rust::Runtime;
-use nix::libc::rtentry;
+use ::std::path::Path;
+use ::std::ptr;
 
 use crate::{Engine, TestResult};
 use crate::errors::TestError;
@@ -24,21 +21,25 @@ impl Default for SpiderMonkey {
     }
 }
 
-
-struct RealmOptions();
-
 impl JSRunner for SpiderMonkey {
     fn run_js_file<'a>(
         &'a mut self,
         path: &Path,
         validator: &'a Validator,
-    ) -> Result<TestResult, TestError> {
+    ) -> ::core::result::Result<TestResult, TestError> {
         run(path,
             validator,
             Engine::JS(JSEngine::SpiderMonkey),
             |(file, reruns)| {
-                let mut engine = mozjs::rust::JSEngine::init().unwrap();
-                let runtime = Runtime::new(engine);
+                use mozjs::rooted;
+                use mozjs::rust::{RealmOptions, Runtime};
+                use mozjs::rust::SIMPLE_GLOBAL_CLASS;
+                use mozjs::jsval::UndefinedValue;
+                use mozjs::jsapi::*;
+
+
+                let engine = mozjs::rust::JSEngine::init().unwrap();
+                let rt = Runtime::new(engine.handle());
 
                 let options = RealmOptions::default();
                 rooted!(in(rt.cx()) let global = unsafe {
@@ -50,9 +51,8 @@ impl JSRunner for SpiderMonkey {
                 rooted!(in(rt.cx()) let mut rval = UndefinedValue());
 
                 for _ in 0..reruns {
-                    let _ = runtime.evaluate_script(global.handle(), &file, "inline.js", 1, rval.handle_mut());
+                    let _ = rt.evaluate_script(global.handle(), &file, "inline.js", 1, rval.handle_mut());
                 }
-
             })
     }
 }

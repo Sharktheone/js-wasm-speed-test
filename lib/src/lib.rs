@@ -1,13 +1,12 @@
 #![allow(dead_code)] // shut up
 
-use crate::errors::TestError;
-use crate::js::javascriptcore::JavaScriptCore;
-use crate::js::v8::V8;
 pub use test::*;
-use crate::js::{JSRunner};
+
+use crate::errors::TestError;
 use crate::js::deno::Deno;
 use crate::js::duktape::Duktape;
-use crate::js::spidermonkey::SpiderMonkey;
+use crate::js::javascriptcore::JavaScriptCore;
+use crate::js::JSRunner;
 
 mod benchmark;
 mod errors;
@@ -19,13 +18,23 @@ pub mod wasm;
 
 pub struct Test;
 
+#[cfg(all(feature = "mozjs", feature = "v8"))]
+compile_error!("Features `mozjs` and `v8` are mutually exclusive and cannot be enabled at the same time.");
+
+
 impl Test {
     pub fn new() -> Self {
         Test
     }
 
     pub fn v8(&self) -> Result<Box<dyn JSRunner>, TestError> {
-        Ok(Box::new(V8::new()?))
+        #[cfg(feature = "v8")]
+        {
+            use crate::js::v8::V8;
+            Ok(Box::new(V8::new()?))
+        }
+        #[cfg(not(feature = "v8"))]
+        Err(TestError::FeatureNotEnabled("v8"))
     }
 
     pub fn javascriptcore(&self) -> Result<Box<dyn JSRunner>, TestError> {
@@ -37,15 +46,18 @@ impl Test {
     }
 
     pub fn spidermonkey(&self) -> Result<Box<dyn JSRunner>, TestError> {
-       Ok(Box::new(SpiderMonkey::new()))
+        #[cfg(feature = "mozjs")]
+        {
+            use crate::js::spidermonkey::SpiderMonkey;
+            Ok(Box::new(SpiderMonkey::new()))
+        }
+        #[cfg(not(feature = "mozjs"))]
+        Err(TestError::FeatureNotEnabled("mozjs"))
     }
 
     pub fn duktape(&self) -> Result<Box<dyn JSRunner>, TestError> {
         Ok(Box::new(Duktape::new()))
     }
-
-
-
 }
 
 impl Default for Test {
