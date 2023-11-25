@@ -1,7 +1,5 @@
 use std::path::Path;
 
-use v8::{Context, ContextScope, HandleScope, Isolate};
-
 use crate::{Engine, TestResult};
 use crate::errors::TestError;
 use crate::js::{JSEngine, JSRunner};
@@ -50,6 +48,8 @@ impl JSRunner for V8 {
             validator,
             Engine::JS(JSEngine::V8),
             |(file, reruns)| {
+                use v8::{Context, ContextScope, HandleScope, Isolate};
+
                 let isolate = &mut Isolate::new(Default::default());
                 let hs = &mut HandleScope::new(isolate);
                 let c = Context::new(hs);

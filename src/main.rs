@@ -1,7 +1,6 @@
 use std::env;
 use std::error::Error;
 use std::path::Path;
-use lib::js::JSRunner;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let path = env::args().nth(1).unwrap();
@@ -17,7 +16,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             "v8" => test.v8()?,
             "deno" => test.deno()?,
             "spidermonkey" | "sm" | "mozjs" => test.spidermonkey()?,
-            "chakra" | "ck" | "cc" | "chakracore" => test.chakra()?,
             _ => return Err(Box::from("Unknown engine")),
         };
 

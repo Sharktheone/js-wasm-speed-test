@@ -3,7 +3,7 @@ use crate::validator::Validator;
 use crate::TestResult;
 use std::path::Path;
 
-pub(crate) mod chakra;
+// pub(crate) mod chakra;
 pub(crate) mod deno;
 pub(crate) mod duktape;
 pub(crate) mod javascriptcore;
@@ -17,7 +17,7 @@ pub enum JSEngine {
     SpiderMonkey,   //https://spidermonkey.dev/
     JavaScriptCore, //https://developer.apple.com/documentation/javascriptcore
     Deno,           //https://github.com/denoland/deno
-    Chakra,         //https://github.com/chakra-core/ChakraCore
+    // Chakra,         //https://github.com/chakra-core/ChakraCore
     Duktape,        //https://github.com/svaarala/duktape
                     // Hermes, //https://github.com/facebook/hermes
                     // JerryScript, //https://github.com/jerryscript-project/jerryscript

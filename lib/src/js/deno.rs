@@ -1,5 +1,5 @@
 use std::path::Path;
-use deno_core::{Extension, JsRuntime, ModuleCode};
+use deno_core::{JsRuntime, ModuleCode};
 
 use crate::{Engine, TestResult};
 use crate::errors::TestError;
@@ -30,7 +30,9 @@ impl JSRunner for Deno {
             |(file, reruns)| {
                 let mut runtime = JsRuntime::new(Default::default());
                 let code = ModuleCode::from(file);
-                runtime.execute_script("test", code).unwrap();
+                for _ in 0..reruns {
+                    let _ = runtime.execute_script("test", code.try_clone().unwrap()).unwrap();
+                }
             })
     }
 }

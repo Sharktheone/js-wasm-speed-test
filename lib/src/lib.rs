@@ -5,7 +5,6 @@ use crate::js::javascriptcore::JavaScriptCore;
 use crate::js::v8::V8;
 pub use test::*;
 use crate::js::{JSRunner};
-use crate::js::chakra::Chakra;
 use crate::js::deno::Deno;
 use crate::js::duktape::Duktape;
 use crate::js::spidermonkey::SpiderMonkey;
@@ -25,28 +24,24 @@ impl Test {
         Test
     }
 
-    pub fn v8(&self) -> Result<&impl JSRunner, TestError> {
-        Ok(&V8::new()?)
+    pub fn v8(&self) -> Result<Box<dyn JSRunner>, TestError> {
+        Ok(Box::new(V8::new()?))
     }
 
-    pub fn javascriptcore(&self) -> Result<&impl JSRunner, TestError> {
-        Ok(&JavaScriptCore::new())
+    pub fn javascriptcore(&self) -> Result<Box<dyn JSRunner>, TestError> {
+        Ok(Box::new(JavaScriptCore::new()))
     }
 
-    pub fn deno(&self) -> Result<&impl JSRunner, TestError> {
-        Ok(&Deno::new())
+    pub fn deno(&self) -> Result<Box<dyn JSRunner>, TestError> {
+        Ok(Box::new(Deno::new()))
     }
 
-    pub fn spidermonkey(&self) -> Result<&impl JSRunner, TestError> {
-       Ok(&SpiderMonkey::new())
+    pub fn spidermonkey(&self) -> Result<Box<dyn JSRunner>, TestError> {
+       Ok(Box::new(SpiderMonkey::new()))
     }
 
-    pub fn chakra(&self) -> Result<&impl JSRunner, TestError> {
-        Ok(&Chakra::new())
-    }
-
-    pub fn duktape(&self) -> Result<&impl JSRunner, TestError> {
-        Ok(&Duktape::new())
+    pub fn duktape(&self) -> Result<Box<dyn JSRunner>, TestError> {
+        Ok(Box::new(Duktape::new()))
     }
 
 
