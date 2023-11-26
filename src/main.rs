@@ -1,6 +1,7 @@
 use std::env;
 use std::error::Error;
 use std::path::Path;
+use lib::validator::Validator;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let path = env::args().nth(1).unwrap();
@@ -19,7 +20,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             _ => return Err(Box::from("Unknown engine")),
         };
 
-        let validator = Default::default();
+        let mut validator = Validator::new();
+
+        validator.reruns = 100;
 
         let res = engine.run_js_file(path, &validator)?;
 
