@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use javascriptcore::{Context, ContextExt};
+use javascriptcore::{Class, Context, ContextExt, Value, ValueExt};
 
 use crate::{Engine, TestResult};
 use crate::errors::TestError;
@@ -14,6 +14,16 @@ impl JavaScriptCore {
     pub fn new() -> Self {
         JavaScriptCore
     }
+
+    // fn register_console(c: &mut Context) {
+    //
+    //     let console = Value::builder().context(c).build();
+    //
+    //     Value::is_function()
+    //
+    //     c.set_value("console", &console);
+    //
+    // }
 }
 
 impl Default for JavaScriptCore {
@@ -33,6 +43,9 @@ impl JSRunner for JavaScriptCore {
             Engine::JS(JSEngine::JavaScriptCore),
             |(file, reruns)| {
                 let context = Context::new();
+
+                // Self::register_console(&mut context); adding functions to values is not supported in the javascriptcore-rs bindings
+
                 for _ in 0..reruns {
                     context.evaluate(&file).unwrap();
                 }
