@@ -2,11 +2,11 @@ use std::path::Path;
 
 use v8::{Context, ContextScope, HandleScope, Isolate, Local, Object};
 
-use crate::{Engine, TestResult};
 use crate::errors::TestError;
-use crate::js::{JSEngine, JSRunner};
 use crate::js::runner::run;
+use crate::js::{JSEngine, JSRunner};
 use crate::validator::Validator;
+use crate::{Engine, TestResult};
 
 pub struct V8;
 
@@ -33,21 +33,27 @@ impl V8 {
         let console_key = v8::String::new(s, "console").unwrap();
         let console_val = Object::new(s);
 
-
         //Fn<(&mut v8::HandleScope<'s>, v8::FunctionCallbackArguments<'s>, v8::ReturnValue<'_>)>
-        let log = v8::FunctionTemplate::new(s, |hs: &mut HandleScope, args: v8::FunctionCallbackArguments, _ret: v8::ReturnValue<'_> | {
-            let mut out = String::new();
+        let log = v8::FunctionTemplate::new(
+            s,
+            |hs: &mut HandleScope,
+             args: v8::FunctionCallbackArguments,
+             _ret: v8::ReturnValue<'_>| {
+                let mut out = String::new();
 
-            for i in 0..args.length() {
-                let arg = args.get(i);
-                let arg = arg.to_string(hs).unwrap();
-                let arg = arg.to_rust_string_lossy(hs);
-                out.push_str(&arg);
-                out.push(' ');
-            }
-            out.pop();
-            println!("{}", out);
-        }).get_function(s).unwrap();
+                for i in 0..args.length() {
+                    let arg = args.get(i);
+                    let arg = arg.to_string(hs).unwrap();
+                    let arg = arg.to_rust_string_lossy(hs);
+                    out.push_str(&arg);
+                    out.push(' ');
+                }
+                out.pop();
+                println!("{}", out);
+            },
+        )
+        .get_function(s)
+        .unwrap();
         let log_key = v8::String::new(s, "log").unwrap();
         console_val.set(s, log_key.into(), log.into());
 
@@ -80,7 +86,8 @@ impl JSRunner for V8 {
         path: &Path,
         validator: &'a Validator,
     ) -> Result<TestResult, TestError> {
-        run(path,
+        run(
+            path,
             validator,
             Engine::JS(JSEngine::V8),
             |(file, reruns)| {
@@ -99,6 +106,7 @@ impl JSRunner for V8 {
                 for _ in 0..reruns {
                     script.run(s).unwrap();
                 }
-            })
+            },
+        )
     }
 }

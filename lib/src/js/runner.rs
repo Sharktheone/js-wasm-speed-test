@@ -1,20 +1,18 @@
-use std::{fs, thread};
+use crate::errors::TestError;
+use crate::resources::ResourceMonitor;
+use crate::validator::Validator;
+use crate::{Engine, TestResult};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
-use crate::resources::ResourceMonitor;
-use crate::{Engine, TestResult};
-use crate::errors::TestError;
-use crate::validator::Validator;
-
+use std::{fs, thread};
 
 pub(super) fn run(
     path: &Path,
     validator: &Validator,
     engine: Engine,
-    run_file: fn((String, u32))
-) -> Result<TestResult, TestError>
-{
+    run_file: fn((String, u32)),
+) -> Result<TestResult, TestError> {
     if !path.is_file() {
         return Err(TestError::IsDir);
     }
@@ -60,7 +58,6 @@ pub(super) fn run(
 
     let monitor = Arc::clone(&monitor);
     monitor.stop(); //hopefully we can lock this shit, while the thread is obviously running... Else it will explode...
-
 
     handle.join().unwrap();
 

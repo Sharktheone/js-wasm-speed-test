@@ -1,11 +1,14 @@
 use ::std::path::Path;
 use ::std::ptr;
+use deno_core::serde_v8::Serializable;
+use javascriptcore::ContextExt;
+use sysinfo::ProcessStatus::Run;
 
-use crate::{Engine, TestResult};
 use crate::errors::TestError;
-use crate::js::{JSEngine, JSRunner};
 use crate::js::runner::run;
+use crate::js::{JSEngine, JSRunner};
 use crate::validator::Validator;
+use crate::{Engine, TestResult};
 
 pub struct SpiderMonkey;
 
@@ -27,16 +30,16 @@ impl JSRunner for SpiderMonkey {
         path: &Path,
         validator: &'a Validator,
     ) -> ::core::result::Result<TestResult, TestError> {
-        run(path,
+        run(
+            path,
             validator,
             Engine::JS(JSEngine::SpiderMonkey),
             |(file, reruns)| {
-                use mozjs::rooted;
-                use mozjs::rust::{RealmOptions, Runtime};
-                use mozjs::rust::SIMPLE_GLOBAL_CLASS;
-                use mozjs::jsval::UndefinedValue;
                 use mozjs::jsapi::*;
-
+                use mozjs::jsval::UndefinedValue;
+                use mozjs::rooted;
+                use mozjs::rust::SIMPLE_GLOBAL_CLASS;
+                use mozjs::rust::{RealmOptions, Runtime};
 
                 let engine = mozjs::rust::JSEngine::init().unwrap();
                 let rt = Runtime::new(engine.handle());
@@ -51,8 +54,15 @@ impl JSRunner for SpiderMonkey {
                 rooted!(in(rt.cx()) let mut rval = UndefinedValue());
 
                 for _ in 0..reruns {
-                    let _ = rt.evaluate_script(global.handle(), &file, "inline.js", 1, rval.handle_mut());
+                    let _ = rt.evaluate_script(
+                        global.handle(),
+                        &file,
+                        "inline.js",
+                        1,
+                        rval.handle_mut(),
+                    );
                 }
-            })
+            },
+        )
     }
 }

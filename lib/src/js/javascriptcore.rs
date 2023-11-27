@@ -2,11 +2,11 @@ use std::path::Path;
 
 use javascriptcore::{Class, Context, ContextExt, Value, ValueExt};
 
-use crate::{Engine, TestResult};
 use crate::errors::TestError;
-use crate::js::{JSEngine, JSRunner};
 use crate::js::runner::run;
+use crate::js::{JSEngine, JSRunner};
 use crate::validator::Validator;
+use crate::{Engine, TestResult};
 
 pub struct JavaScriptCore;
 
@@ -38,7 +38,8 @@ impl JSRunner for JavaScriptCore {
         path: &Path,
         validator: &'a Validator,
     ) -> Result<TestResult, TestError> {
-        run(path,
+        run(
+            path,
             validator,
             Engine::JS(JSEngine::JavaScriptCore),
             |(file, reruns)| {
@@ -49,6 +50,7 @@ impl JSRunner for JavaScriptCore {
                 for _ in 0..reruns {
                     context.evaluate(&file).unwrap();
                 }
-            })
+            },
+        )
     }
 }

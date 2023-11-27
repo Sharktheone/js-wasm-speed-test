@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use crate::errors::TestError;
-use crate::TestResult;
 use crate::validator::Validator;
+use crate::TestResult;
 
 // pub(crate) mod chakra;
 pub(crate) mod deno;
@@ -12,9 +12,9 @@ pub(crate) mod javascriptcore;
 #[cfg(feature = "mozjs")]
 pub(crate) mod spidermonkey;
 
+mod runner;
 #[cfg(feature = "v8")]
 pub(crate) mod v8;
-mod runner;
 
 #[derive(Debug, Clone)]
 pub enum JSEngine {
@@ -29,11 +29,11 @@ pub enum JSEngine {
     Deno,
     //https://github.com/denoland/deno
     // Chakra,         //https://github.com/chakra-core/ChakraCore
-    Duktape,        //https://github.com/svaarala/duktape
-    // Hermes, //https://github.com/facebook/hermes
-    // JerryScript, //https://github.com/jerryscript-project/jerryscript
-    // MuJS, //https://github.com/ccxvii/mujs NOTE: hmm, seems like a very small project
-    // Espruino, //https://github.com/espruino/Espruino
+    Duktape, //https://github.com/svaarala/duktape
+             // Hermes, //https://github.com/facebook/hermes
+             // JerryScript, //https://github.com/jerryscript-project/jerryscript
+             // MuJS, //https://github.com/ccxvii/mujs NOTE: hmm, seems like a very small project
+             // Espruino, //https://github.com/espruino/Espruino
 }
 
 pub trait JSRunner {

@@ -1,10 +1,10 @@
-use std::path::Path;
 use crate::errors::TestError;
-use crate::js::{JSEngine, JSRunner};
 use crate::js::runner::run;
-use crate::{Engine, TestResult};
+use crate::js::{JSEngine, JSRunner};
 use crate::validator::Validator;
+use crate::{Engine, TestResult};
 use kg_js::JsEngine;
+use std::path::Path;
 
 pub struct Duktape;
 
@@ -26,7 +26,8 @@ impl JSRunner for Duktape {
         path: &Path,
         validator: &'a Validator,
     ) -> Result<TestResult, TestError> {
-        run(path,
+        run(
+            path,
             validator,
             Engine::JS(JSEngine::Duktape),
             |(file, reruns)| {
@@ -35,6 +36,7 @@ impl JSRunner for Duktape {
                 for _ in 0..reruns {
                     engine.eval(&file).unwrap();
                 }
-            })
+            },
+        )
     }
 }

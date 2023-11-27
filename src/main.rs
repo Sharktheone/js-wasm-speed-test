@@ -1,7 +1,7 @@
+use lib::validator::Validator;
 use std::env;
 use std::error::Error;
 use std::path::Path;
-use lib::validator::Validator;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let path = env::args().nth(1).unwrap();
@@ -27,7 +27,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         let res = engine.run_js_file(path, &validator)?;
 
         println!("{:?}", res);
-
     } else {
         return Err(Box::from("Not a JS file; WASM not supported yet"));
     }

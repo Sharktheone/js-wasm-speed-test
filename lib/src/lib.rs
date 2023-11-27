@@ -19,8 +19,9 @@ pub mod wasm;
 pub struct Test;
 
 #[cfg(all(feature = "mozjs", feature = "v8"))]
-compile_error!("Features `mozjs` and `v8` are mutually exclusive and cannot be enabled at the same time.");
-
+compile_error!(
+    "Features `mozjs` and `v8` are mutually exclusive and cannot be enabled at the same time."
+);
 
 impl Test {
     pub fn new() -> Self {
