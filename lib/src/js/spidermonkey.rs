@@ -1,11 +1,12 @@
 use ::std::path::Path;
 use ::std::ptr;
 
-use mozjs::jsapi::*;
 use mozjs::jsval::UndefinedValue;
 use mozjs::rooted;
 use mozjs::rust::{RealmOptions, Runtime};
 use mozjs::rust::SIMPLE_GLOBAL_CLASS;
+use mozjs::rust::jsapi_wrapped as jsapi;
+use mozjs::jsapi::*;
 
 use crate::{Engine, TestResult};
 use crate::errors::TestError;
@@ -42,37 +43,9 @@ impl JSRunner for SpiderMonkey {
                 let rt = Runtime::new(engine.handle());
 
                 let options = RealmOptions::default();
+
                 rooted!(in(rt.cx()) let global  = unsafe {
                     JS_NewGlobalObject(rt.cx(), &SIMPLE_GLOBAL_CLASS, ptr::null_mut(),
-                        OnNewGlobalHookOption::FireOnNewGlobalHook,
-                        &*options)
-                });
-
-
-                rooted!(in(rt.cx()) let log = unsafe {
-                    JS_NewFunction(rt.cx(), Some(log), 0, 0, ptr::null_mut())
-                });
-
-                let console_class = JSClass {
-                    name: b"console\0" as *const u8 as *const i8,
-                    flags: 0,
-                    cOps: ptr::null(),
-                    spec: &ClassSpec {
-                        createConstructor: None,
-                        createPrototype: None,
-                        constructorFunctions: (),
-                        constructorProperties: (),
-                        prototypeFunctions: (),
-                        prototypeProperties: (),
-                        finishInit: None,
-                        flags: 0,
-                    },
-                    ext: ptr::null(),
-                    oOps: ptr::null(),
-                };
-
-                rooted!(in(rt.cx()) let console = unsafe {
-                    JS_NewGlobalObject(rt.cx(), &console_class, ptr::null_mut(),
                         OnNewGlobalHookOption::FireOnNewGlobalHook,
                         &*options)
                 });
@@ -93,9 +66,4 @@ impl JSRunner for SpiderMonkey {
             },
         )
     }
-}
-
-
-unsafe extern "C" fn log(cx: *mut JSContext, argc: ::std::os::raw::c_uint, vp: *mut Value) -> bool {
-
 }
