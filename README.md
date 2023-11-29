@@ -39,5 +39,5 @@ runtime to use for the engine.
 
 ## Results
 
-Not yet tested
+Speed has not really been tested, but for the results of this test, see [summary.md](summary.md) (copied message I wrote on the GoSuB Zulip Chat)
 
